@@ -12,10 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiTeacherRouteImport } from './routes/ai-teacher'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as GamesRouteImport } from './routes/games'
+import { Route as PracticeRouteImport } from './routes/practice'
+import { Route as PronunciationRouteImport } from './routes/pronunciation'
+import { Route as QuestionBankRouteImport } from './routes/question-bank'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SchoolProfileRouteImport } from './routes/school-profile'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StudentSetupRouteImport } from './routes/student-setup'
+import { Route as VocabularyRouteImport } from './routes/vocabulary'
 import { Route as HomeworkIndexRouteImport } from './routes/homework/index'
 import { Route as HomeworkHomeworkIdRouteImport } from './routes/homework/$homeworkId'
 import { Route as LessonLessonIdRouteImport } from './routes/lesson.$lessonId'
@@ -37,6 +42,26 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesRoute = GamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PracticeRoute = PracticeRouteImport.update({
+  id: '/practice',
+  path: '/practice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PronunciationRoute = PronunciationRouteImport.update({
+  id: '/pronunciation',
+  path: '/pronunciation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuestionBankRoute = QuestionBankRouteImport.update({
+  id: '/question-bank',
+  path: '/question-bank',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
   path: '/scan',
@@ -55,6 +80,11 @@ const SignupRoute = SignupRouteImport.update({
 const StudentSetupRoute = StudentSetupRouteImport.update({
   id: '/student-setup',
   path: '/student-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VocabularyRoute = VocabularyRouteImport.update({
+  id: '/vocabulary',
+  path: '/vocabulary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeworkIndexRoute = HomeworkIndexRouteImport.update({
@@ -87,10 +117,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
+  '/games': typeof GamesRoute
+  '/practice': typeof PracticeRoute
+  '/pronunciation': typeof PronunciationRoute
+  '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/vocabulary': typeof VocabularyRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
@@ -101,10 +136,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
+  '/games': typeof GamesRoute
+  '/practice': typeof PracticeRoute
+  '/pronunciation': typeof PronunciationRoute
+  '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/vocabulary': typeof VocabularyRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
@@ -116,10 +156,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
+  '/games': typeof GamesRoute
+  '/practice': typeof PracticeRoute
+  '/pronunciation': typeof PronunciationRoute
+  '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/vocabulary': typeof VocabularyRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
@@ -132,10 +177,15 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-teacher'
     | '/dashboard'
+    | '/games'
+    | '/practice'
+    | '/pronunciation'
+    | '/question-bank'
     | '/scan'
     | '/school-profile'
     | '/signup'
     | '/student-setup'
+    | '/vocabulary'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
@@ -146,10 +196,15 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-teacher'
     | '/dashboard'
+    | '/games'
+    | '/practice'
+    | '/pronunciation'
+    | '/question-bank'
     | '/scan'
     | '/school-profile'
     | '/signup'
     | '/student-setup'
+    | '/vocabulary'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
@@ -160,10 +215,15 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-teacher'
     | '/dashboard'
+    | '/games'
+    | '/practice'
+    | '/pronunciation'
+    | '/question-bank'
     | '/scan'
     | '/school-profile'
     | '/signup'
     | '/student-setup'
+    | '/vocabulary'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
@@ -175,10 +235,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiTeacherRoute: typeof AiTeacherRoute
   DashboardRoute: typeof DashboardRoute
+  GamesRoute: typeof GamesRoute
+  PracticeRoute: typeof PracticeRoute
+  PronunciationRoute: typeof PronunciationRoute
+  QuestionBankRoute: typeof QuestionBankRoute
   ScanRoute: typeof ScanRoute
   SchoolProfileRoute: typeof SchoolProfileRoute
   SignupRoute: typeof SignupRoute
   StudentSetupRoute: typeof StudentSetupRoute
+  VocabularyRoute: typeof VocabularyRoute
   HomeworkHomeworkIdRoute: typeof HomeworkHomeworkIdRoute
   LessonLessonIdRoute: typeof LessonLessonIdRoute
   StudySubjectRoute: typeof StudySubjectRoute
@@ -209,6 +274,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/practice': {
+      id: '/practice'
+      path: '/practice'
+      fullPath: '/practice'
+      preLoaderRoute: typeof PracticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pronunciation': {
+      id: '/pronunciation'
+      path: '/pronunciation'
+      fullPath: '/pronunciation'
+      preLoaderRoute: typeof PronunciationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/question-bank': {
+      id: '/question-bank'
+      path: '/question-bank'
+      fullPath: '/question-bank'
+      preLoaderRoute: typeof QuestionBankRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scan': {
       id: '/scan'
       path: '/scan'
@@ -235,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/student-setup'
       fullPath: '/student-setup'
       preLoaderRoute: typeof StudentSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vocabulary': {
+      id: '/vocabulary'
+      path: '/vocabulary'
+      fullPath: '/vocabulary'
+      preLoaderRoute: typeof VocabularyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/homework/': {
@@ -279,10 +379,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiTeacherRoute: AiTeacherRoute,
   DashboardRoute: DashboardRoute,
+  GamesRoute: GamesRoute,
+  PracticeRoute: PracticeRoute,
+  PronunciationRoute: PronunciationRoute,
+  QuestionBankRoute: QuestionBankRoute,
   ScanRoute: ScanRoute,
   SchoolProfileRoute: SchoolProfileRoute,
   SignupRoute: SignupRoute,
   StudentSetupRoute: StudentSetupRoute,
+  VocabularyRoute: VocabularyRoute,
   HomeworkHomeworkIdRoute: HomeworkHomeworkIdRoute,
   LessonLessonIdRoute: LessonLessonIdRoute,
   StudySubjectRoute: StudySubjectRoute,
