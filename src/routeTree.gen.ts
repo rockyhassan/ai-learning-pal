@@ -12,8 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiTeacherRouteImport } from './routes/ai-teacher'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as GamesRouteImport } from './routes/games'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ParentModeRouteImport } from './routes/parent-mode'
+import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as PracticeRouteImport } from './routes/practice'
+import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as PronunciationRouteImport } from './routes/pronunciation'
 import { Route as QuestionBankRouteImport } from './routes/question-bank'
 import { Route as ScanRouteImport } from './routes/scan'
@@ -42,14 +47,39 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GamesRoute = GamesRouteImport.update({
   id: '/games',
   path: '/games',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentModeRoute = ParentModeRouteImport.update({
+  id: '/parent-mode',
+  path: '/parent-mode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PracticeRoute = PracticeRouteImport.update({
   id: '/practice',
   path: '/practice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PronunciationRoute = PronunciationRouteImport.update({
@@ -117,8 +147,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parent-mode': typeof ParentModeRoute
+  '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
+  '/progress': typeof ProgressRoute
   '/pronunciation': typeof PronunciationRoute
   '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
@@ -136,8 +171,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parent-mode': typeof ParentModeRoute
+  '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
+  '/progress': typeof ProgressRoute
   '/pronunciation': typeof PronunciationRoute
   '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
@@ -156,8 +196,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parent-mode': typeof ParentModeRoute
+  '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
+  '/progress': typeof ProgressRoute
   '/pronunciation': typeof PronunciationRoute
   '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
@@ -177,8 +222,13 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-teacher'
     | '/dashboard'
+    | '/documents'
     | '/games'
+    | '/notifications'
+    | '/parent-mode'
+    | '/planner'
     | '/practice'
+    | '/progress'
     | '/pronunciation'
     | '/question-bank'
     | '/scan'
@@ -196,8 +246,13 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-teacher'
     | '/dashboard'
+    | '/documents'
     | '/games'
+    | '/notifications'
+    | '/parent-mode'
+    | '/planner'
     | '/practice'
+    | '/progress'
     | '/pronunciation'
     | '/question-bank'
     | '/scan'
@@ -215,8 +270,13 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-teacher'
     | '/dashboard'
+    | '/documents'
     | '/games'
+    | '/notifications'
+    | '/parent-mode'
+    | '/planner'
     | '/practice'
+    | '/progress'
     | '/pronunciation'
     | '/question-bank'
     | '/scan'
@@ -235,8 +295,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiTeacherRoute: typeof AiTeacherRoute
   DashboardRoute: typeof DashboardRoute
+  DocumentsRoute: typeof DocumentsRoute
   GamesRoute: typeof GamesRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ParentModeRoute: typeof ParentModeRoute
+  PlannerRoute: typeof PlannerRoute
   PracticeRoute: typeof PracticeRoute
+  ProgressRoute: typeof ProgressRoute
   PronunciationRoute: typeof PronunciationRoute
   QuestionBankRoute: typeof QuestionBankRoute
   ScanRoute: typeof ScanRoute
@@ -274,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/games': {
       id: '/games'
       path: '/games'
@@ -281,11 +353,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent-mode': {
+      id: '/parent-mode'
+      path: '/parent-mode'
+      fullPath: '/parent-mode'
+      preLoaderRoute: typeof ParentModeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/practice': {
       id: '/practice'
       path: '/practice'
       fullPath: '/practice'
       preLoaderRoute: typeof PracticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pronunciation': {
@@ -379,8 +479,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiTeacherRoute: AiTeacherRoute,
   DashboardRoute: DashboardRoute,
+  DocumentsRoute: DocumentsRoute,
   GamesRoute: GamesRoute,
+  NotificationsRoute: NotificationsRoute,
+  ParentModeRoute: ParentModeRoute,
+  PlannerRoute: PlannerRoute,
   PracticeRoute: PracticeRoute,
+  ProgressRoute: ProgressRoute,
   PronunciationRoute: PronunciationRoute,
   QuestionBankRoute: QuestionBankRoute,
   ScanRoute: ScanRoute,
