@@ -14,6 +14,8 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as SchoolProfileRouteImport } from './routes/school-profile'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StudentSetupRouteImport } from './routes/student-setup'
+import { Route as HomeworkIndexRouteImport } from './routes/homework/index'
+import { Route as LessonLessonIdRouteImport } from './routes/lesson.$lessonId'
 import { Route as StudyIndexRouteImport } from './routes/study/index'
 import { Route as StudySubjectRouteImport } from './routes/study/$subject'
 
@@ -42,6 +44,16 @@ const StudentSetupRoute = StudentSetupRouteImport.update({
   path: '/student-setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HomeworkIndexRoute = HomeworkIndexRouteImport.update({
+  id: '/homework/',
+  path: '/homework/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LessonLessonIdRoute = LessonLessonIdRouteImport.update({
+  id: '/lesson/$lessonId',
+  path: '/lesson/$lessonId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudyIndexRoute = StudyIndexRouteImport.update({
   id: '/study/',
   path: '/study/',
@@ -59,7 +71,9 @@ export interface FileRoutesByFullPath {
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/homework/': typeof HomeworkIndexRoute
   '/study/': typeof StudyIndexRoute
 }
 export interface FileRoutesByTo {
@@ -68,7 +82,9 @@ export interface FileRoutesByTo {
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/homework': typeof HomeworkIndexRoute
   '/study': typeof StudyIndexRoute
 }
 export interface FileRoutesById {
@@ -78,7 +94,9 @@ export interface FileRoutesById {
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/homework/': typeof HomeworkIndexRoute
   '/study/': typeof StudyIndexRoute
 }
 export interface FileRouteTypes {
@@ -89,7 +107,9 @@ export interface FileRouteTypes {
     | '/school-profile'
     | '/signup'
     | '/student-setup'
+    | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/homework/'
     | '/study/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -98,7 +118,9 @@ export interface FileRouteTypes {
     | '/school-profile'
     | '/signup'
     | '/student-setup'
+    | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/homework'
     | '/study'
   id:
     | '__root__'
@@ -107,7 +129,9 @@ export interface FileRouteTypes {
     | '/school-profile'
     | '/signup'
     | '/student-setup'
+    | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/homework/'
     | '/study/'
   fileRoutesById: FileRoutesById
 }
@@ -117,7 +141,9 @@ export interface RootRouteChildren {
   SchoolProfileRoute: typeof SchoolProfileRoute
   SignupRoute: typeof SignupRoute
   StudentSetupRoute: typeof StudentSetupRoute
+  LessonLessonIdRoute: typeof LessonLessonIdRoute
   StudySubjectRoute: typeof StudySubjectRoute
+  HomeworkIndexRoute: typeof HomeworkIndexRoute
   StudyIndexRoute: typeof StudyIndexRoute
 }
 
@@ -158,6 +184,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/homework/': {
+      id: '/homework/'
+      path: '/homework'
+      fullPath: '/homework/'
+      preLoaderRoute: typeof HomeworkIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lesson/$lessonId': {
+      id: '/lesson/$lessonId'
+      path: '/lesson/$lessonId'
+      fullPath: '/lesson/$lessonId'
+      preLoaderRoute: typeof LessonLessonIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/study/': {
       id: '/study/'
       path: '/study'
@@ -181,7 +221,9 @@ const rootRouteChildren: RootRouteChildren = {
   SchoolProfileRoute: SchoolProfileRoute,
   SignupRoute: SignupRoute,
   StudentSetupRoute: StudentSetupRoute,
+  LessonLessonIdRoute: LessonLessonIdRoute,
   StudySubjectRoute: StudySubjectRoute,
+  HomeworkIndexRoute: HomeworkIndexRoute,
   StudyIndexRoute: StudyIndexRoute,
 }
 export const routeTree = rootRouteImport
