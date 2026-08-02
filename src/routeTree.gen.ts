@@ -10,33 +10,362 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AchievementsRouteImport } from './routes/achievements'
+import { Route as AiMemoryRouteImport } from './routes/ai-memory'
+import { Route as AiTeacherRouteImport } from './routes/ai-teacher'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as GamesRouteImport } from './routes/games'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ParentModeRouteImport } from './routes/parent-mode'
+import { Route as PlannerRouteImport } from './routes/planner'
+import { Route as PracticeRouteImport } from './routes/practice'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as PronunciationRouteImport } from './routes/pronunciation'
+import { Route as QuestionBankRouteImport } from './routes/question-bank'
+import { Route as ScanRouteImport } from './routes/scan'
+import { Route as SchoolProfileRouteImport } from './routes/school-profile'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as StudentSetupRouteImport } from './routes/student-setup'
+import { Route as VocabularyRouteImport } from './routes/vocabulary'
+import { Route as HomeworkIndexRouteImport } from './routes/homework/index'
+import { Route as HomeworkHomeworkIdRouteImport } from './routes/homework/$homeworkId'
+import { Route as LessonLessonIdRouteImport } from './routes/lesson.$lessonId'
+import { Route as StudyIndexRouteImport } from './routes/study/index'
+import { Route as StudySubjectRouteImport } from './routes/study/$subject'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AchievementsRoute = AchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiMemoryRoute = AiMemoryRouteImport.update({
+  id: '/ai-memory',
+  path: '/ai-memory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiTeacherRoute = AiTeacherRouteImport.update({
+  id: '/ai-teacher',
+  path: '/ai-teacher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesRoute = GamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentModeRoute = ParentModeRouteImport.update({
+  id: '/parent-mode',
+  path: '/parent-mode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PracticeRoute = PracticeRouteImport.update({
+  id: '/practice',
+  path: '/practice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PronunciationRoute = PronunciationRouteImport.update({
+  id: '/pronunciation',
+  path: '/pronunciation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuestionBankRoute = QuestionBankRouteImport.update({
+  id: '/question-bank',
+  path: '/question-bank',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScanRoute = ScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SchoolProfileRoute = SchoolProfileRouteImport.update({
+  id: '/school-profile',
+  path: '/school-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentSetupRoute = StudentSetupRouteImport.update({
+  id: '/student-setup',
+  path: '/student-setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VocabularyRoute = VocabularyRouteImport.update({
+  id: '/vocabulary',
+  path: '/vocabulary',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeworkIndexRoute = HomeworkIndexRouteImport.update({
+  id: '/homework/',
+  path: '/homework/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeworkHomeworkIdRoute = HomeworkHomeworkIdRouteImport.update({
+  id: '/homework/$homeworkId',
+  path: '/homework/$homeworkId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LessonLessonIdRoute = LessonLessonIdRouteImport.update({
+  id: '/lesson/$lessonId',
+  path: '/lesson/$lessonId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudyIndexRoute = StudyIndexRouteImport.update({
+  id: '/study/',
+  path: '/study/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudySubjectRoute = StudySubjectRouteImport.update({
+  id: '/study/$subject',
+  path: '/study/$subject',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
+  '/ai-memory': typeof AiMemoryRoute
+  '/ai-teacher': typeof AiTeacherRoute
+  '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/games': typeof GamesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parent-mode': typeof ParentModeRoute
+  '/planner': typeof PlannerRoute
+  '/practice': typeof PracticeRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/pronunciation': typeof PronunciationRoute
+  '/question-bank': typeof QuestionBankRoute
+  '/scan': typeof ScanRoute
+  '/school-profile': typeof SchoolProfileRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/student-setup': typeof StudentSetupRoute
+  '/vocabulary': typeof VocabularyRoute
+  '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
+  '/lesson/$lessonId': typeof LessonLessonIdRoute
+  '/study/$subject': typeof StudySubjectRoute
+  '/homework/': typeof HomeworkIndexRoute
+  '/study/': typeof StudyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
+  '/ai-memory': typeof AiMemoryRoute
+  '/ai-teacher': typeof AiTeacherRoute
+  '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/games': typeof GamesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parent-mode': typeof ParentModeRoute
+  '/planner': typeof PlannerRoute
+  '/practice': typeof PracticeRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/pronunciation': typeof PronunciationRoute
+  '/question-bank': typeof QuestionBankRoute
+  '/scan': typeof ScanRoute
+  '/school-profile': typeof SchoolProfileRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/student-setup': typeof StudentSetupRoute
+  '/vocabulary': typeof VocabularyRoute
+  '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
+  '/lesson/$lessonId': typeof LessonLessonIdRoute
+  '/study/$subject': typeof StudySubjectRoute
+  '/homework': typeof HomeworkIndexRoute
+  '/study': typeof StudyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
+  '/ai-memory': typeof AiMemoryRoute
+  '/ai-teacher': typeof AiTeacherRoute
+  '/dashboard': typeof DashboardRoute
+  '/documents': typeof DocumentsRoute
+  '/games': typeof GamesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parent-mode': typeof ParentModeRoute
+  '/planner': typeof PlannerRoute
+  '/practice': typeof PracticeRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
+  '/pronunciation': typeof PronunciationRoute
+  '/question-bank': typeof QuestionBankRoute
+  '/scan': typeof ScanRoute
+  '/school-profile': typeof SchoolProfileRoute
+  '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
+  '/student-setup': typeof StudentSetupRoute
+  '/vocabulary': typeof VocabularyRoute
+  '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
+  '/lesson/$lessonId': typeof LessonLessonIdRoute
+  '/study/$subject': typeof StudySubjectRoute
+  '/homework/': typeof HomeworkIndexRoute
+  '/study/': typeof StudyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/achievements'
+    | '/ai-memory'
+    | '/ai-teacher'
+    | '/dashboard'
+    | '/documents'
+    | '/games'
+    | '/notifications'
+    | '/parent-mode'
+    | '/planner'
+    | '/practice'
+    | '/profile'
+    | '/progress'
+    | '/pronunciation'
+    | '/question-bank'
+    | '/scan'
+    | '/school-profile'
+    | '/settings'
+    | '/signup'
+    | '/student-setup'
+    | '/vocabulary'
+    | '/homework/$homeworkId'
+    | '/lesson/$lessonId'
+    | '/study/$subject'
+    | '/homework/'
+    | '/study/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/achievements'
+    | '/ai-memory'
+    | '/ai-teacher'
+    | '/dashboard'
+    | '/documents'
+    | '/games'
+    | '/notifications'
+    | '/parent-mode'
+    | '/planner'
+    | '/practice'
+    | '/profile'
+    | '/progress'
+    | '/pronunciation'
+    | '/question-bank'
+    | '/scan'
+    | '/school-profile'
+    | '/settings'
+    | '/signup'
+    | '/student-setup'
+    | '/vocabulary'
+    | '/homework/$homeworkId'
+    | '/lesson/$lessonId'
+    | '/study/$subject'
+    | '/homework'
+    | '/study'
+  id:
+    | '__root__'
+    | '/'
+    | '/achievements'
+    | '/ai-memory'
+    | '/ai-teacher'
+    | '/dashboard'
+    | '/documents'
+    | '/games'
+    | '/notifications'
+    | '/parent-mode'
+    | '/planner'
+    | '/practice'
+    | '/profile'
+    | '/progress'
+    | '/pronunciation'
+    | '/question-bank'
+    | '/scan'
+    | '/school-profile'
+    | '/settings'
+    | '/signup'
+    | '/student-setup'
+    | '/vocabulary'
+    | '/homework/$homeworkId'
+    | '/lesson/$lessonId'
+    | '/study/$subject'
+    | '/homework/'
+    | '/study/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AchievementsRoute: typeof AchievementsRoute
+  AiMemoryRoute: typeof AiMemoryRoute
+  AiTeacherRoute: typeof AiTeacherRoute
+  DashboardRoute: typeof DashboardRoute
+  DocumentsRoute: typeof DocumentsRoute
+  GamesRoute: typeof GamesRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ParentModeRoute: typeof ParentModeRoute
+  PlannerRoute: typeof PlannerRoute
+  PracticeRoute: typeof PracticeRoute
+  ProfileRoute: typeof ProfileRoute
+  ProgressRoute: typeof ProgressRoute
+  PronunciationRoute: typeof PronunciationRoute
+  QuestionBankRoute: typeof QuestionBankRoute
+  ScanRoute: typeof ScanRoute
+  SchoolProfileRoute: typeof SchoolProfileRoute
+  SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
+  StudentSetupRoute: typeof StudentSetupRoute
+  VocabularyRoute: typeof VocabularyRoute
+  HomeworkHomeworkIdRoute: typeof HomeworkHomeworkIdRoute
+  LessonLessonIdRoute: typeof LessonLessonIdRoute
+  StudySubjectRoute: typeof StudySubjectRoute
+  HomeworkIndexRoute: typeof HomeworkIndexRoute
+  StudyIndexRoute: typeof StudyIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +377,212 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/achievements': {
+      id: '/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AchievementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-memory': {
+      id: '/ai-memory'
+      path: '/ai-memory'
+      fullPath: '/ai-memory'
+      preLoaderRoute: typeof AiMemoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-teacher': {
+      id: '/ai-teacher'
+      path: '/ai-teacher'
+      fullPath: '/ai-teacher'
+      preLoaderRoute: typeof AiTeacherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent-mode': {
+      id: '/parent-mode'
+      path: '/parent-mode'
+      fullPath: '/parent-mode'
+      preLoaderRoute: typeof ParentModeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/practice': {
+      id: '/practice'
+      path: '/practice'
+      fullPath: '/practice'
+      preLoaderRoute: typeof PracticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pronunciation': {
+      id: '/pronunciation'
+      path: '/pronunciation'
+      fullPath: '/pronunciation'
+      preLoaderRoute: typeof PronunciationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/question-bank': {
+      id: '/question-bank'
+      path: '/question-bank'
+      fullPath: '/question-bank'
+      preLoaderRoute: typeof QuestionBankRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scan': {
+      id: '/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/school-profile': {
+      id: '/school-profile'
+      path: '/school-profile'
+      fullPath: '/school-profile'
+      preLoaderRoute: typeof SchoolProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student-setup': {
+      id: '/student-setup'
+      path: '/student-setup'
+      fullPath: '/student-setup'
+      preLoaderRoute: typeof StudentSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vocabulary': {
+      id: '/vocabulary'
+      path: '/vocabulary'
+      fullPath: '/vocabulary'
+      preLoaderRoute: typeof VocabularyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/homework/': {
+      id: '/homework/'
+      path: '/homework'
+      fullPath: '/homework/'
+      preLoaderRoute: typeof HomeworkIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/homework/$homeworkId': {
+      id: '/homework/$homeworkId'
+      path: '/homework/$homeworkId'
+      fullPath: '/homework/$homeworkId'
+      preLoaderRoute: typeof HomeworkHomeworkIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lesson/$lessonId': {
+      id: '/lesson/$lessonId'
+      path: '/lesson/$lessonId'
+      fullPath: '/lesson/$lessonId'
+      preLoaderRoute: typeof LessonLessonIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study/': {
+      id: '/study/'
+      path: '/study'
+      fullPath: '/study/'
+      preLoaderRoute: typeof StudyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study/$subject': {
+      id: '/study/$subject'
+      path: '/study/$subject'
+      fullPath: '/study/$subject'
+      preLoaderRoute: typeof StudySubjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AchievementsRoute: AchievementsRoute,
+  AiMemoryRoute: AiMemoryRoute,
+  AiTeacherRoute: AiTeacherRoute,
+  DashboardRoute: DashboardRoute,
+  DocumentsRoute: DocumentsRoute,
+  GamesRoute: GamesRoute,
+  NotificationsRoute: NotificationsRoute,
+  ParentModeRoute: ParentModeRoute,
+  PlannerRoute: PlannerRoute,
+  PracticeRoute: PracticeRoute,
+  ProfileRoute: ProfileRoute,
+  ProgressRoute: ProgressRoute,
+  PronunciationRoute: PronunciationRoute,
+  QuestionBankRoute: QuestionBankRoute,
+  ScanRoute: ScanRoute,
+  SchoolProfileRoute: SchoolProfileRoute,
+  SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
+  StudentSetupRoute: StudentSetupRoute,
+  VocabularyRoute: VocabularyRoute,
+  HomeworkHomeworkIdRoute: HomeworkHomeworkIdRoute,
+  LessonLessonIdRoute: LessonLessonIdRoute,
+  StudySubjectRoute: StudySubjectRoute,
+  HomeworkIndexRoute: HomeworkIndexRoute,
+  StudyIndexRoute: StudyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
