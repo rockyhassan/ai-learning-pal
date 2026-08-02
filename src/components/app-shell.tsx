@@ -92,7 +92,7 @@ export function PageShell({
         <div className="flex items-center gap-3">
           {back ? (
             <Link
-              to={back}
+              to={back as "/"}
               className="tap grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card"
               aria-label="Back"
             >
@@ -180,7 +180,7 @@ export function TileGrid({
       {items.map((item) => (
         <Link
           key={item.to + item.label}
-          to={item.to}
+          to={item.to as "/"}
           className="tap rounded-3xl border border-border gradient-card p-4 shadow-soft"
         >
           <span className="text-2xl">{item.emoji}</span>
