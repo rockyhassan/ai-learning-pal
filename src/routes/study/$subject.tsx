@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
-import { subjects } from "@/lib/mock-data";
+import { subjects, type Subject } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/study/$subject")({
   head: ({ params }) => {
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/study/$subject")({
       ],
     };
   },
-  loader: ({ params }) => {
+  loader: ({ params }): Subject => {
     const subject = subjects.find((s) => s.slug === params.subject);
     if (!subject) throw notFound();
     return subject;
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/study/$subject")({
 });
 
 function SubjectPage() {
-  const subject = Route.useLoaderData();
+  const subject: Subject = Route.useLoaderData();
   const { t, lang } = useApp();
 
   return (

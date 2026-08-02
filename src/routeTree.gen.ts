@@ -10,13 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as SchoolProfileRouteImport } from './routes/school-profile'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StudentSetupRouteImport } from './routes/student-setup'
+import { Route as StudyIndexRouteImport } from './routes/study/index'
+import { Route as StudySubjectRouteImport } from './routes/study/$subject'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SchoolProfileRoute = SchoolProfileRouteImport.update({
@@ -34,39 +42,83 @@ const StudentSetupRoute = StudentSetupRouteImport.update({
   path: '/student-setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudyIndexRoute = StudyIndexRouteImport.update({
+  id: '/study/',
+  path: '/study/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudySubjectRoute = StudySubjectRouteImport.update({
+  id: '/study/$subject',
+  path: '/study/$subject',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/study/$subject': typeof StudySubjectRoute
+  '/study/': typeof StudyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/study/$subject': typeof StudySubjectRoute
+  '/study': typeof StudyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
   '/school-profile': typeof SchoolProfileRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
+  '/study/$subject': typeof StudySubjectRoute
+  '/study/': typeof StudyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/school-profile' | '/signup' | '/student-setup'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/school-profile'
+    | '/signup'
+    | '/student-setup'
+    | '/study/$subject'
+    | '/study/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/school-profile' | '/signup' | '/student-setup'
-  id: '__root__' | '/' | '/school-profile' | '/signup' | '/student-setup'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/school-profile'
+    | '/signup'
+    | '/student-setup'
+    | '/study/$subject'
+    | '/study'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/school-profile'
+    | '/signup'
+    | '/student-setup'
+    | '/study/$subject'
+    | '/study/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
   SchoolProfileRoute: typeof SchoolProfileRoute
   SignupRoute: typeof SignupRoute
   StudentSetupRoute: typeof StudentSetupRoute
+  StudySubjectRoute: typeof StudySubjectRoute
+  StudyIndexRoute: typeof StudyIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -76,6 +128,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/school-profile': {
@@ -99,14 +158,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentSetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/study/': {
+      id: '/study/'
+      path: '/study'
+      fullPath: '/study/'
+      preLoaderRoute: typeof StudyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/study/$subject': {
+      id: '/study/$subject'
+      path: '/study/$subject'
+      fullPath: '/study/$subject'
+      preLoaderRoute: typeof StudySubjectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
   SchoolProfileRoute: SchoolProfileRoute,
   SignupRoute: SignupRoute,
   StudentSetupRoute: StudentSetupRoute,
+  StudySubjectRoute: StudySubjectRoute,
+  StudyIndexRoute: StudyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -41,7 +41,7 @@ function Dashboard() {
   const { t } = useApp();
   const pending = homework.filter((h) => h.status === "pending");
   const done = homework.filter((h) => h.status === "completed");
-  const todayMinutes = weeklyProgress[5].minutes;
+  const todayMinutes = weeklyProgress[5]?.minutes ?? 0;
 
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-background pb-28">
