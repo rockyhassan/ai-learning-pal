@@ -13,7 +13,7 @@ export const Route = createFileRoute("/homework/")({
       { property: "og:description", content: "Pending and completed homework with AI help." },
     ],
   }),
-  component: HomeworkList;
+  component: HomeworkList,
 });
 
 function HomeworkList() {
