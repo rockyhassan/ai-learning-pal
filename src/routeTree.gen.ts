@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AchievementsRouteImport } from './routes/achievements'
+import { Route as AiMemoryRouteImport } from './routes/ai-memory'
 import { Route as AiTeacherRouteImport } from './routes/ai-teacher'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DocumentsRouteImport } from './routes/documents'
@@ -18,11 +20,13 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as ParentModeRouteImport } from './routes/parent-mode'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as PracticeRouteImport } from './routes/practice'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as PronunciationRouteImport } from './routes/pronunciation'
 import { Route as QuestionBankRouteImport } from './routes/question-bank'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SchoolProfileRouteImport } from './routes/school-profile'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StudentSetupRouteImport } from './routes/student-setup'
 import { Route as VocabularyRouteImport } from './routes/vocabulary'
@@ -35,6 +39,16 @@ import { Route as StudySubjectRouteImport } from './routes/study/$subject'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AchievementsRoute = AchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiMemoryRoute = AiMemoryRouteImport.update({
+  id: '/ai-memory',
+  path: '/ai-memory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AiTeacherRoute = AiTeacherRouteImport.update({
@@ -77,6 +91,11 @@ const PracticeRoute = PracticeRouteImport.update({
   path: '/practice',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgressRoute = ProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -100,6 +119,11 @@ const ScanRoute = ScanRouteImport.update({
 const SchoolProfileRoute = SchoolProfileRouteImport.update({
   id: '/school-profile',
   path: '/school-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -145,6 +169,8 @@ const StudySubjectRoute = StudySubjectRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
+  '/ai-memory': typeof AiMemoryRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
@@ -153,11 +179,13 @@ export interface FileRoutesByFullPath {
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
+  '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/pronunciation': typeof PronunciationRoute
   '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
   '/school-profile': typeof SchoolProfileRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
@@ -169,6 +197,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
+  '/ai-memory': typeof AiMemoryRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
@@ -177,11 +207,13 @@ export interface FileRoutesByTo {
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
+  '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/pronunciation': typeof PronunciationRoute
   '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
   '/school-profile': typeof SchoolProfileRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
@@ -194,6 +226,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/achievements': typeof AchievementsRoute
+  '/ai-memory': typeof AiMemoryRoute
   '/ai-teacher': typeof AiTeacherRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
@@ -202,11 +236,13 @@ export interface FileRoutesById {
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
+  '/profile': typeof ProfileRoute
   '/progress': typeof ProgressRoute
   '/pronunciation': typeof PronunciationRoute
   '/question-bank': typeof QuestionBankRoute
   '/scan': typeof ScanRoute
   '/school-profile': typeof SchoolProfileRoute
+  '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
@@ -220,6 +256,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/achievements'
+    | '/ai-memory'
     | '/ai-teacher'
     | '/dashboard'
     | '/documents'
@@ -228,11 +266,13 @@ export interface FileRouteTypes {
     | '/parent-mode'
     | '/planner'
     | '/practice'
+    | '/profile'
     | '/progress'
     | '/pronunciation'
     | '/question-bank'
     | '/scan'
     | '/school-profile'
+    | '/settings'
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
@@ -244,6 +284,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/achievements'
+    | '/ai-memory'
     | '/ai-teacher'
     | '/dashboard'
     | '/documents'
@@ -252,11 +294,13 @@ export interface FileRouteTypes {
     | '/parent-mode'
     | '/planner'
     | '/practice'
+    | '/profile'
     | '/progress'
     | '/pronunciation'
     | '/question-bank'
     | '/scan'
     | '/school-profile'
+    | '/settings'
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
@@ -268,6 +312,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/achievements'
+    | '/ai-memory'
     | '/ai-teacher'
     | '/dashboard'
     | '/documents'
@@ -276,11 +322,13 @@ export interface FileRouteTypes {
     | '/parent-mode'
     | '/planner'
     | '/practice'
+    | '/profile'
     | '/progress'
     | '/pronunciation'
     | '/question-bank'
     | '/scan'
     | '/school-profile'
+    | '/settings'
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
@@ -293,6 +341,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AchievementsRoute: typeof AchievementsRoute
+  AiMemoryRoute: typeof AiMemoryRoute
   AiTeacherRoute: typeof AiTeacherRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
@@ -301,11 +351,13 @@ export interface RootRouteChildren {
   ParentModeRoute: typeof ParentModeRoute
   PlannerRoute: typeof PlannerRoute
   PracticeRoute: typeof PracticeRoute
+  ProfileRoute: typeof ProfileRoute
   ProgressRoute: typeof ProgressRoute
   PronunciationRoute: typeof PronunciationRoute
   QuestionBankRoute: typeof QuestionBankRoute
   ScanRoute: typeof ScanRoute
   SchoolProfileRoute: typeof SchoolProfileRoute
+  SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   StudentSetupRoute: typeof StudentSetupRoute
   VocabularyRoute: typeof VocabularyRoute
@@ -323,6 +375,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/achievements': {
+      id: '/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AchievementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-memory': {
+      id: '/ai-memory'
+      path: '/ai-memory'
+      fullPath: '/ai-memory'
+      preLoaderRoute: typeof AiMemoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ai-teacher': {
@@ -381,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PracticeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/progress': {
       id: '/progress'
       path: '/progress'
@@ -414,6 +487,13 @@ declare module '@tanstack/react-router' {
       path: '/school-profile'
       fullPath: '/school-profile'
       preLoaderRoute: typeof SchoolProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -477,6 +557,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AchievementsRoute: AchievementsRoute,
+  AiMemoryRoute: AiMemoryRoute,
   AiTeacherRoute: AiTeacherRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
@@ -485,11 +567,13 @@ const rootRouteChildren: RootRouteChildren = {
   ParentModeRoute: ParentModeRoute,
   PlannerRoute: PlannerRoute,
   PracticeRoute: PracticeRoute,
+  ProfileRoute: ProfileRoute,
   ProgressRoute: ProgressRoute,
   PronunciationRoute: PronunciationRoute,
   QuestionBankRoute: QuestionBankRoute,
   ScanRoute: ScanRoute,
   SchoolProfileRoute: SchoolProfileRoute,
+  SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   StudentSetupRoute: StudentSetupRoute,
   VocabularyRoute: VocabularyRoute,
