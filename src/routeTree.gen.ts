@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ParentDashboardRouteImport } from './routes/parent-dashboard'
 import { Route as ParentModeRouteImport } from './routes/parent-mode'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as PracticeRouteImport } from './routes/practice'
@@ -30,6 +31,8 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StudentSetupRouteImport } from './routes/student-setup'
 import { Route as VocabularyRouteImport } from './routes/vocabulary'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminUserIdRouteImport } from './routes/admin/$userId'
 import { Route as HomeworkIndexRouteImport } from './routes/homework/index'
 import { Route as HomeworkHomeworkIdRouteImport } from './routes/homework/$homeworkId'
 import { Route as LessonLessonIdRouteImport } from './routes/lesson.$lessonId'
@@ -74,6 +77,11 @@ const GamesRoute = GamesRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentDashboardRoute = ParentDashboardRouteImport.update({
+  id: '/parent-dashboard',
+  path: '/parent-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParentModeRoute = ParentModeRouteImport.update({
@@ -141,6 +149,16 @@ const VocabularyRoute = VocabularyRouteImport.update({
   path: '/vocabulary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUserIdRoute = AdminUserIdRouteImport.update({
+  id: '/admin/$userId',
+  path: '/admin/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HomeworkIndexRoute = HomeworkIndexRouteImport.update({
   id: '/homework/',
   path: '/homework/',
@@ -176,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
   '/notifications': typeof NotificationsRoute
+  '/parent-dashboard': typeof ParentDashboardRoute
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
@@ -189,9 +208,11 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/admin/': typeof AdminIndexRoute
   '/homework/': typeof HomeworkIndexRoute
   '/study/': typeof StudyIndexRoute
 }
@@ -204,6 +225,7 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
   '/notifications': typeof NotificationsRoute
+  '/parent-dashboard': typeof ParentDashboardRoute
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
@@ -217,9 +239,11 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/admin': typeof AdminIndexRoute
   '/homework': typeof HomeworkIndexRoute
   '/study': typeof StudyIndexRoute
 }
@@ -233,6 +257,7 @@ export interface FileRoutesById {
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
   '/notifications': typeof NotificationsRoute
+  '/parent-dashboard': typeof ParentDashboardRoute
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
@@ -246,9 +271,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/admin/': typeof AdminIndexRoute
   '/homework/': typeof HomeworkIndexRoute
   '/study/': typeof StudyIndexRoute
 }
@@ -263,6 +290,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/games'
     | '/notifications'
+    | '/parent-dashboard'
     | '/parent-mode'
     | '/planner'
     | '/practice'
@@ -276,9 +304,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
+    | '/admin/$userId'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/admin/'
     | '/homework/'
     | '/study/'
   fileRoutesByTo: FileRoutesByTo
@@ -291,6 +321,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/games'
     | '/notifications'
+    | '/parent-dashboard'
     | '/parent-mode'
     | '/planner'
     | '/practice'
@@ -304,9 +335,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
+    | '/admin/$userId'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/admin'
     | '/homework'
     | '/study'
   id:
@@ -319,6 +352,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/games'
     | '/notifications'
+    | '/parent-dashboard'
     | '/parent-mode'
     | '/planner'
     | '/practice'
@@ -332,9 +366,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
+    | '/admin/$userId'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/admin/'
     | '/homework/'
     | '/study/'
   fileRoutesById: FileRoutesById
@@ -348,6 +384,7 @@ export interface RootRouteChildren {
   DocumentsRoute: typeof DocumentsRoute
   GamesRoute: typeof GamesRoute
   NotificationsRoute: typeof NotificationsRoute
+  ParentDashboardRoute: typeof ParentDashboardRoute
   ParentModeRoute: typeof ParentModeRoute
   PlannerRoute: typeof PlannerRoute
   PracticeRoute: typeof PracticeRoute
@@ -361,9 +398,11 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   StudentSetupRoute: typeof StudentSetupRoute
   VocabularyRoute: typeof VocabularyRoute
+  AdminUserIdRoute: typeof AdminUserIdRoute
   HomeworkHomeworkIdRoute: typeof HomeworkHomeworkIdRoute
   LessonLessonIdRoute: typeof LessonLessonIdRoute
   StudySubjectRoute: typeof StudySubjectRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   HomeworkIndexRoute: typeof HomeworkIndexRoute
   StudyIndexRoute: typeof StudyIndexRoute
 }
@@ -424,6 +463,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent-dashboard': {
+      id: '/parent-dashboard'
+      path: '/parent-dashboard'
+      fullPath: '/parent-dashboard'
+      preLoaderRoute: typeof ParentDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parent-mode': {
@@ -517,6 +563,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VocabularyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/$userId': {
+      id: '/admin/$userId'
+      path: '/admin/$userId'
+      fullPath: '/admin/$userId'
+      preLoaderRoute: typeof AdminUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/homework/': {
       id: '/homework/'
       path: '/homework'
@@ -564,6 +624,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentsRoute: DocumentsRoute,
   GamesRoute: GamesRoute,
   NotificationsRoute: NotificationsRoute,
+  ParentDashboardRoute: ParentDashboardRoute,
   ParentModeRoute: ParentModeRoute,
   PlannerRoute: PlannerRoute,
   PracticeRoute: PracticeRoute,
@@ -577,12 +638,24 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   StudentSetupRoute: StudentSetupRoute,
   VocabularyRoute: VocabularyRoute,
+  AdminUserIdRoute: AdminUserIdRoute,
   HomeworkHomeworkIdRoute: HomeworkHomeworkIdRoute,
   LessonLessonIdRoute: LessonLessonIdRoute,
   StudySubjectRoute: StudySubjectRoute,
+  AdminIndexRoute: AdminIndexRoute,
   HomeworkIndexRoute: HomeworkIndexRoute,
   StudyIndexRoute: StudyIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
