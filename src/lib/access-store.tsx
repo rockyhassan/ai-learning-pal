@@ -175,7 +175,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
       ...prev,
       {
         id: `u-${Date.now()}`,
-        name: name || email.split("@")[0],
+        name: name || email.split("@")[0] || email,
         email,
         role,
         status: "invited",
