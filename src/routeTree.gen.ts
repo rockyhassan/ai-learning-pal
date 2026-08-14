@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as GamesRouteImport } from './routes/games'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ParentDashboardRouteImport } from './routes/parent-dashboard'
 import { Route as ParentModeRouteImport } from './routes/parent-mode'
 import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as PracticeRouteImport } from './routes/practice'
@@ -74,6 +75,11 @@ const GamesRoute = GamesRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParentDashboardRoute = ParentDashboardRouteImport.update({
+  id: '/parent-dashboard',
+  path: '/parent-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParentModeRoute = ParentModeRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
   '/notifications': typeof NotificationsRoute
+  '/parent-dashboard': typeof ParentDashboardRoute
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
   '/notifications': typeof NotificationsRoute
+  '/parent-dashboard': typeof ParentDashboardRoute
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
   '/notifications': typeof NotificationsRoute
+  '/parent-dashboard': typeof ParentDashboardRoute
   '/parent-mode': typeof ParentModeRoute
   '/planner': typeof PlannerRoute
   '/practice': typeof PracticeRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/games'
     | '/notifications'
+    | '/parent-dashboard'
     | '/parent-mode'
     | '/planner'
     | '/practice'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/games'
     | '/notifications'
+    | '/parent-dashboard'
     | '/parent-mode'
     | '/planner'
     | '/practice'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/games'
     | '/notifications'
+    | '/parent-dashboard'
     | '/parent-mode'
     | '/planner'
     | '/practice'
@@ -348,6 +360,7 @@ export interface RootRouteChildren {
   DocumentsRoute: typeof DocumentsRoute
   GamesRoute: typeof GamesRoute
   NotificationsRoute: typeof NotificationsRoute
+  ParentDashboardRoute: typeof ParentDashboardRoute
   ParentModeRoute: typeof ParentModeRoute
   PlannerRoute: typeof PlannerRoute
   PracticeRoute: typeof PracticeRoute
@@ -424,6 +437,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parent-dashboard': {
+      id: '/parent-dashboard'
+      path: '/parent-dashboard'
+      fullPath: '/parent-dashboard'
+      preLoaderRoute: typeof ParentDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parent-mode': {
@@ -564,6 +584,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocumentsRoute: DocumentsRoute,
   GamesRoute: GamesRoute,
   NotificationsRoute: NotificationsRoute,
+  ParentDashboardRoute: ParentDashboardRoute,
   ParentModeRoute: ParentModeRoute,
   PlannerRoute: PlannerRoute,
   PracticeRoute: PracticeRoute,
