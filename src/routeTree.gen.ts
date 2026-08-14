@@ -31,6 +31,8 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as StudentSetupRouteImport } from './routes/student-setup'
 import { Route as VocabularyRouteImport } from './routes/vocabulary'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminUserIdRouteImport } from './routes/admin/$userId'
 import { Route as HomeworkIndexRouteImport } from './routes/homework/index'
 import { Route as HomeworkHomeworkIdRouteImport } from './routes/homework/$homeworkId'
 import { Route as LessonLessonIdRouteImport } from './routes/lesson.$lessonId'
@@ -147,6 +149,16 @@ const VocabularyRoute = VocabularyRouteImport.update({
   path: '/vocabulary',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUserIdRoute = AdminUserIdRouteImport.update({
+  id: '/admin/$userId',
+  path: '/admin/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HomeworkIndexRoute = HomeworkIndexRouteImport.update({
   id: '/homework/',
   path: '/homework/',
@@ -196,9 +208,11 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/admin/': typeof AdminIndexRoute
   '/homework/': typeof HomeworkIndexRoute
   '/study/': typeof StudyIndexRoute
 }
@@ -225,9 +239,11 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/admin': typeof AdminIndexRoute
   '/homework': typeof HomeworkIndexRoute
   '/study': typeof StudyIndexRoute
 }
@@ -255,9 +271,11 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/student-setup': typeof StudentSetupRoute
   '/vocabulary': typeof VocabularyRoute
+  '/admin/$userId': typeof AdminUserIdRoute
   '/homework/$homeworkId': typeof HomeworkHomeworkIdRoute
   '/lesson/$lessonId': typeof LessonLessonIdRoute
   '/study/$subject': typeof StudySubjectRoute
+  '/admin/': typeof AdminIndexRoute
   '/homework/': typeof HomeworkIndexRoute
   '/study/': typeof StudyIndexRoute
 }
@@ -286,9 +304,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
+    | '/admin/$userId'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/admin/'
     | '/homework/'
     | '/study/'
   fileRoutesByTo: FileRoutesByTo
@@ -315,9 +335,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
+    | '/admin/$userId'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/admin'
     | '/homework'
     | '/study'
   id:
@@ -344,9 +366,11 @@ export interface FileRouteTypes {
     | '/signup'
     | '/student-setup'
     | '/vocabulary'
+    | '/admin/$userId'
     | '/homework/$homeworkId'
     | '/lesson/$lessonId'
     | '/study/$subject'
+    | '/admin/'
     | '/homework/'
     | '/study/'
   fileRoutesById: FileRoutesById
@@ -374,9 +398,11 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   StudentSetupRoute: typeof StudentSetupRoute
   VocabularyRoute: typeof VocabularyRoute
+  AdminUserIdRoute: typeof AdminUserIdRoute
   HomeworkHomeworkIdRoute: typeof HomeworkHomeworkIdRoute
   LessonLessonIdRoute: typeof LessonLessonIdRoute
   StudySubjectRoute: typeof StudySubjectRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   HomeworkIndexRoute: typeof HomeworkIndexRoute
   StudyIndexRoute: typeof StudyIndexRoute
 }
@@ -537,6 +563,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VocabularyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/$userId': {
+      id: '/admin/$userId'
+      path: '/admin/$userId'
+      fullPath: '/admin/$userId'
+      preLoaderRoute: typeof AdminUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/homework/': {
       id: '/homework/'
       path: '/homework'
@@ -598,9 +638,11 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   StudentSetupRoute: StudentSetupRoute,
   VocabularyRoute: VocabularyRoute,
+  AdminUserIdRoute: AdminUserIdRoute,
   HomeworkHomeworkIdRoute: HomeworkHomeworkIdRoute,
   LessonLessonIdRoute: LessonLessonIdRoute,
   StudySubjectRoute: StudySubjectRoute,
+  AdminIndexRoute: AdminIndexRoute,
   HomeworkIndexRoute: HomeworkIndexRoute,
   StudyIndexRoute: StudyIndexRoute,
 }

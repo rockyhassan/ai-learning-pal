@@ -21,6 +21,8 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 const quickLinks = [
+  { to: "/parent-dashboard", emoji: "👪", en: "Parent Dash", bn: "প্যারেন্ট ড্যাশ" },
+  { to: "/admin", emoji: "🛡️", en: "Admin", bn: "অ্যাডমিন" },
   { to: "/vocabulary", emoji: "📖", en: "Vocabulary", bn: "শব্দভাণ্ডার" },
   { to: "/pronunciation", emoji: "🎤", en: "Pronunciation", bn: "উচ্চারণ" },
   { to: "/question-bank", emoji: "📚", en: "Question Bank", bn: "প্রশ্নব্যাংক" },
