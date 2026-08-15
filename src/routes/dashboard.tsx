@@ -212,7 +212,7 @@ function Dashboard() {
 
         <SectionCard title={t("Everything", "সবকিছু")}>
           <div className="grid grid-cols-4 gap-2">
-            {quickLinks.map((q) => (
+            {visibleLinks.map((q) => (
               <Link
                 key={q.to}
                 to={q.to as "/"}
