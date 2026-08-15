@@ -3,6 +3,8 @@ import { ChevronRight, Flame, Play, Send } from "lucide-react";
 import { BottomNav, LangToggle, Pill, SectionCard } from "@/components/app-shell";
 import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/app-state";
+import { useAccess } from "@/lib/access-store";
+import { featureForRoute, isSessionOnlyRoute } from "@/lib/route-access";
 import { exams, homework, routine, student, weeklyProgress } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/dashboard")({
@@ -41,6 +43,12 @@ const quickLinks = [
 
 function Dashboard() {
   const { t } = useApp();
+  const { can } = useAccess();
+  const visibleLinks = quickLinks.filter((q) => {
+    if (isSessionOnlyRoute(q.to)) return true;
+    const feature = featureForRoute(q.to);
+    return !feature || can(feature);
+  });
   const pending = homework.filter((h) => h.status === "pending");
   const done = homework.filter((h) => h.status === "completed");
   const todayMinutes = weeklyProgress[5]?.minutes ?? 0;
@@ -204,7 +212,7 @@ function Dashboard() {
 
         <SectionCard title={t("Everything", "সবকিছু")}>
           <div className="grid grid-cols-4 gap-2">
-            {quickLinks.map((q) => (
+            {visibleLinks.map((q) => (
               <Link
                 key={q.to}
                 to={q.to as "/"}

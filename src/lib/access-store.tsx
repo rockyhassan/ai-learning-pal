@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -158,6 +159,11 @@ const seedUsers: AccessUser[] = [
 
 type AccessState = {
   users: AccessUser[];
+  currentUser: AccessUser | null;
+  authReady: boolean;
+  signIn: (email: string) => { ok: boolean; reason?: "not-found" | "disabled" };
+  signOut: () => void;
+  can: (key: FeatureKey) => boolean;
   invite: (input: { name: string; email: string; role: Role }) => void;
   togglePermission: (userId: string, key: FeatureKey) => void;
   setRole: (userId: string, role: Role) => void;
@@ -167,8 +173,45 @@ type AccessState = {
 
 const AccessContext = createContext<AccessState | null>(null);
 
+const SESSION_KEY = "wafi.session.email";
+
 export function AccessProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<AccessUser[]>(seedUsers);
+  const [email, setEmail] = useState<string | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    setEmail(window.localStorage.getItem(SESSION_KEY));
+    setAuthReady(true);
+  }, []);
+
+  const currentUser = useMemo(
+    () => users.find((u) => u.email.toLowerCase() === (email ?? "").toLowerCase()) ?? null,
+    [users, email],
+  );
+
+  const signIn = useCallback<AccessState["signIn"]>(
+    (input) => {
+      const found = users.find((u) => u.email.toLowerCase() === input.trim().toLowerCase());
+      if (!found) return { ok: false, reason: "not-found" as const };
+      if (found.status === "disabled") return { ok: false, reason: "disabled" as const };
+      window.localStorage.setItem(SESSION_KEY, found.email);
+      setEmail(found.email);
+      return { ok: true };
+    },
+    [users],
+  );
+
+  const signOut = useCallback(() => {
+    window.localStorage.removeItem(SESSION_KEY);
+    setEmail(null);
+  }, []);
+
+  const can = useCallback<AccessState["can"]>(
+    (key) =>
+      !!currentUser && currentUser.status !== "disabled" && currentUser.permissions.includes(key),
+    [currentUser],
+  );
 
   const invite = useCallback<AccessState["invite"]>(({ name, email, role }) => {
     setUsers((prev) => [
@@ -218,8 +261,32 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AccessState>(
-    () => ({ users, invite, togglePermission, setRole, toggleStatus, remove }),
-    [users, invite, togglePermission, setRole, toggleStatus, remove],
+    () => ({
+      users,
+      currentUser,
+      authReady,
+      signIn,
+      signOut,
+      can,
+      invite,
+      togglePermission,
+      setRole,
+      toggleStatus,
+      remove,
+    }),
+    [
+      users,
+      currentUser,
+      authReady,
+      signIn,
+      signOut,
+      can,
+      invite,
+      togglePermission,
+      setRole,
+      toggleStatus,
+      remove,
+    ],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;

@@ -69,10 +69,10 @@ function Welcome() {
           {t("Start", "শুরু করি")}
         </Link>
         <Link
-          to="/dashboard"
+          to="/login"
           className="tap block w-full rounded-full border border-primary-foreground/30 py-3 text-center text-sm font-semibold opacity-90"
         >
-          {t("Skip to Dashboard", "সরাসরি ড্যাশবোর্ডে")}
+          {t("I already have access — Sign in", "আমার অ্যাক্সেস আছে — সাইন ইন")}
         </Link>
       </div>
     </div>
