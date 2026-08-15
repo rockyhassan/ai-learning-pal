@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppProvider } from "../lib/app-state";
 import { AccessProvider } from "../lib/access-store";
+import { RouteGuard } from "../components/route-guard";
 import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
@@ -137,7 +138,9 @@ function RootComponent() {
       <AppProvider>
         <AccessProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
+          <RouteGuard>
+            <Outlet />
+          </RouteGuard>
           <Toaster position="top-center" />
         </AccessProvider>
       </AppProvider>
