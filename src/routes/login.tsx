@@ -7,11 +7,11 @@ import { Label } from "@/components/ui/label";
 import { useApp } from "@/lib/app-state";
 import { roleLabels, useAccess } from "@/lib/access-store";
 
-type LoginSearch = { redirect?: string };
+type LoginSearch = { redirect?: string | undefined };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
-    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    redirect: typeof search["redirect"] === "string" ? (search["redirect"] as string) : undefined,
   }),
   head: () => ({
     meta: [
