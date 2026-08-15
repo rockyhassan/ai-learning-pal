@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageShell, SectionCard } from "@/components/app-shell";
 import { Switch } from "@/components/ui/switch";
 import { useApp } from "@/lib/app-state";
+import { roleLabels, useAccess } from "@/lib/access-store";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -17,6 +18,8 @@ export const Route = createFileRoute("/settings")({
 
 function Settings() {
   const { t, lang, setLang, dark, setDark } = useApp();
+  const { currentUser, signOut } = useAccess();
+  const navigate = useNavigate();
 
   return (
     <PageShell title={t("Settings", "সেটিংস")} subtitle={t("Preferences", "পছন্দ")}>
@@ -85,6 +88,33 @@ function Settings() {
             </li>
           ))}
         </ul>
+      </SectionCard>
+
+      <SectionCard title={t("Account", "অ্যাকাউন্ট")}>
+        {currentUser ? (
+          <>
+            <p className="text-sm font-bold">
+              {roleLabels[currentUser.role].emoji} {currentUser.name}
+            </p>
+            <p className="text-xs text-muted-foreground">{currentUser.email}</p>
+            <button
+              onClick={() => {
+                signOut();
+                navigate({ to: "/login" });
+              }}
+              className="tap mt-3 w-full rounded-2xl bg-destructive/12 py-3 text-sm font-bold text-destructive"
+            >
+              {t("Sign out", "সাইন আউট")}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={() => navigate({ to: "/login" })}
+            className="tap w-full rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+          >
+            {t("Sign in", "সাইন ইন")}
+          </button>
+        )}
       </SectionCard>
     </PageShell>
   );
