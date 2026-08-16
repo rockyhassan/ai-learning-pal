@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
-import { exams, homework, routine } from "@/lib/mock-data";
+import { exams, homework } from "@/lib/mock-data";
+import { sortRoutine, todayWeekday, useSchoolContent, weekdays, type Weekday } from "@/lib/school-content";
 
 export const Route = createFileRoute("/planner")({
   head: () => ({
@@ -17,21 +19,42 @@ export const Route = createFileRoute("/planner")({
 
 function Planner() {
   const { t } = useApp();
+  const { routine } = useSchoolContent();
+  const [day, setDay] = useState<Weekday>(todayWeekday());
+  const dayRoutine = sortRoutine(routine.filter((r) => r.day === day));
   return (
     <PageShell title={t("Planner", "প্ল্যানার")} subtitle={t("This week", "এই সপ্তাহ")}>
       <SectionCard title={t("Routine", "রুটিন")}>
-        <ul className="divide-y divide-border">
-          {routine.map((r) => (
-            <li key={r.time} className="flex items-center gap-3 py-2 text-sm">
-              <span className="w-14 font-bold text-primary">{r.time}</span>
-              <div className="flex-1">
-                <p className="font-medium">{r.subject}</p>
-                <p className="text-[11px] text-muted-foreground">{r.teacher}</p>
-              </div>
-              <span className="text-xs text-muted-foreground">{r.room}</span>
-            </li>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {weekdays.map((d) => (
+            <button
+              key={d.key}
+              onClick={() => setDay(d.key)}
+              className={`tap rounded-full px-3 py-1.5 text-[11px] font-bold ${
+                day === d.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {t(d.en, d.bn)}
+            </button>
           ))}
-        </ul>
+        </div>
+        {dayRoutine.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("No classes today.", "আজ কোনো ক্লাস নেই।")}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {dayRoutine.map((r) => (
+              <li key={r.id} className="flex items-center gap-3 py-2 text-sm">
+                <span className="w-24 shrink-0 text-[11px] font-bold text-primary">
+                  {r.start} – {r.end}
+                </span>
+                <div className="flex-1">
+                  <p className="font-medium">{r.subject}</p>
+                  <p className="text-[11px] text-muted-foreground">{r.teacher || "—"}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </SectionCard>
 
       <SectionCard title={t("Homework", "হোমওয়ার্ক")}>

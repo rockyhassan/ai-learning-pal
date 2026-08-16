@@ -3,6 +3,7 @@ import { Camera, ChevronRight, Image, PlusCircle, RefreshCw } from "lucide-react
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
 import { homework } from "@/lib/mock-data";
+import { todayKey, useSchoolContent } from "@/lib/school-content";
 
 export const Route = createFileRoute("/homework/")({
   head: () => ({
@@ -20,6 +21,8 @@ function HomeworkList() {
   const { t } = useApp();
   const pending = homework.filter((h) => h.status === "pending");
   const done = homework.filter((h) => h.status === "completed");
+  const { diary } = useSchoolContent();
+  const today = diary.filter((d) => d.date === todayKey());
 
   return (
     <PageShell title={t("Homework", "হোমওয়ার্ক")} subtitle={t("Today", "আজ")}>
@@ -39,6 +42,30 @@ function HomeworkList() {
           </button>
         ))}
       </div>
+
+      <SectionCard
+        title={t("School Diary", "স্কুল ডায়েরি")}
+        hint={<Pill tone="primary">{today.length}</Pill>}
+      >
+        {today.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t("No diary entries for today.", "আজকের কোনো ডায়েরি এন্ট্রি নেই।")}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {today.map((d) => (
+              <li key={d.id} className="rounded-2xl bg-muted p-3">
+                <p className="text-sm font-bold">{d.subject}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase text-muted-foreground">C.W</p>
+                <p className="text-xs">{d.cw || "—"}</p>
+                <p className="mt-1 text-[10px] font-bold uppercase text-muted-foreground">H.W</p>
+                <p className="text-xs">{d.hw || "—"}</p>
+                {d.answer ? <p className="mt-1 text-xs text-primary">{d.answer}</p> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </SectionCard>
 
       <SectionCard title={t("Pending", "বাকি আছে")} hint={<Pill tone="warning">{pending.length}</Pill>}>
         <ul className="space-y-2">
