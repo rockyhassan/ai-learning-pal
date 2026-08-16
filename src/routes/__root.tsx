@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppProvider } from "../lib/app-state";
 import { AccessProvider } from "../lib/access-store";
+import { SchoolContentProvider } from "../lib/school-content";
 import { RouteGuard } from "../components/route-guard";
 import { Toaster } from "../components/ui/sonner";
 
@@ -137,11 +138,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <AccessProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <RouteGuard>
-            <Outlet />
-          </RouteGuard>
-          <Toaster position="top-center" />
+          <SchoolContentProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <RouteGuard>
+              <Outlet />
+            </RouteGuard>
+            <Toaster position="top-center" />
+          </SchoolContentProvider>
         </AccessProvider>
       </AppProvider>
     </QueryClientProvider>

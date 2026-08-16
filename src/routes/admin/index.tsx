@@ -56,6 +56,28 @@ function AdminDashboard() {
         </div>
       </SectionCard>
 
+      <SectionCard title={t("School content", "স্কুল কনটেন্ট")}>
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            to="/admin/diary"
+            className="tap rounded-2xl bg-muted p-3"
+          >
+            <span className="text-xl">📔</span>
+            <p className="mt-1 text-sm font-bold">{t("School Diary", "স্কুল ডায়েরি")}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {t("Add, paste, edit, delete", "যোগ, পেস্ট, এডিট, ডিলিট")}
+            </p>
+          </Link>
+          <Link to="/admin/routine" className="tap rounded-2xl bg-muted p-3">
+            <span className="text-xl">📅</span>
+            <p className="mt-1 text-sm font-bold">{t("Class Routine", "ক্লাস রুটিন")}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {t("Add, edit, delete periods", "পিরিয়ড যোগ, এডিট, ডিলিট")}
+            </p>
+          </Link>
+        </div>
+      </SectionCard>
+
       <SectionCard title={t("Give access by email", "ইমেইল দিয়ে অ্যাক্সেস দিন")}>
         <form
           className="space-y-2"
