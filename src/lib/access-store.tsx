@@ -118,44 +118,7 @@ export type AccessUser = {
   pin: string;
 };
 
-const seedUsers: AccessUser[] = [
-  {
-    id: "u-parent",
-    name: "Shirin Rahman",
-    email: "shirin.parent@gmail.com",
-    role: "parent",
-    status: "active",
-    permissions: rolePresets.parent,
-    pin: "1357",
-  },
-  {
-    id: "u-student",
-    name: "Wafi Rahman",
-    email: "wafi.student@gmail.com",
-    role: "student",
-    status: "active",
-    permissions: rolePresets.student,
-    pin: "2580",
-  },
-  {
-    id: "u-teacher",
-    name: "Ms. Nabila Haque",
-    email: "nabila.teacher@sunrise.edu.bd",
-    role: "teacher",
-    status: "active",
-    permissions: rolePresets.teacher,
-    pin: "3690",
-  },
-  {
-    id: "u-teacher-2",
-    name: "Mr. Rafiqul Islam",
-    email: "rafiq.math@sunrise.edu.bd",
-    role: "teacher",
-    status: "invited",
-    permissions: rolePresets.teacher,
-    pin: "1470",
-  },
-];
+const seedUsers: AccessUser[] = [];
 
 type AccessState = {
   users: AccessUser[];
