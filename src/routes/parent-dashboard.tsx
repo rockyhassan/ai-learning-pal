@@ -3,7 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/app-state";
-import { exams, homework, student, subjects, teachers, weeklyProgress } from "@/lib/mock-data";
+import { student, subjects, teachers, weeklyProgress } from "@/lib/mock-data";
+import { useSchoolContent, calculateDaysRemaining, formatDaysRemaining } from "@/lib/school-content";
 
 export const Route = createFileRoute("/parent-dashboard")({
   head: () => ({
@@ -26,8 +27,7 @@ export const Route = createFileRoute("/parent-dashboard")({
 
 function ParentDashboard() {
   const { t } = useApp();
-  const pending = homework.filter((h) => h.status === "pending");
-  const done = homework.filter((h) => h.status === "completed");
+  const { exams } = useSchoolContent();
   const weekMinutes = weeklyProgress.reduce((sum, d) => sum + d.minutes, 0);
   const avgScore = Math.round(
     weeklyProgress.reduce((sum, d) => sum + d.score, 0) / weeklyProgress.length,
@@ -53,42 +53,6 @@ function ParentDashboard() {
         </div>
       </SectionCard>
 
-      <SectionCard
-        title={t("Homework today", "আজকের হোমওয়ার্ক")}
-        hint={
-          <Link to="/homework" className="text-xs font-bold text-primary">
-            {t("All", "সব")}
-          </Link>
-        }
-      >
-        <div className="mb-3 flex gap-2">
-          <Pill tone="warning">
-            {pending.length} {t("Pending", "বাকি")}
-          </Pill>
-          <Pill tone="success">
-            {done.length} {t("Completed", "শেষ")}
-          </Pill>
-        </div>
-        <ul className="space-y-2">
-          {homework.map((h) => (
-            <li
-              key={h.id}
-              className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
-            >
-              <span
-                className={`size-2.5 rounded-full ${h.status === "pending" ? "bg-warning" : "bg-success"}`}
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{t(h.title, h.titleBn)}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {h.subject} · {h.due}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </SectionCard>
-
       <SectionCard title={t("Subject progress", "বিষয়ভিত্তিক অগ্রগতি")}>
         <ul className="space-y-3">
           {subjects.slice(0, 5).map((s) => (
@@ -107,15 +71,18 @@ function ParentDashboard() {
 
       <SectionCard title={t("Upcoming exams", "আসন্ন পরীক্ষা")}>
         <ul className="space-y-2">
-          {exams.map((e) => (
-            <li key={e.name} className="rounded-2xl bg-muted p-3">
-              <p className="text-sm font-bold leading-tight">{e.name}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">{e.chapter}</p>
-              <p className="mt-1 text-sm font-extrabold text-destructive">
-                {e.days} {t("days left", "দিন বাকি")}
-              </p>
-            </li>
-          ))}
+          {exams.map((e) => {
+            const daysRemaining = calculateDaysRemaining(e.date);
+            return (
+              <li key={e.id} className="rounded-2xl bg-muted p-3">
+                <p className="text-sm font-bold leading-tight">{e.name}</p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{e.chapter}</p>
+                <p className="mt-1 text-sm font-extrabold text-destructive">
+                  {formatDaysRemaining(daysRemaining)}
+                </p>
+              </li>
+            );
+          })}
         </ul>
       </SectionCard>
 

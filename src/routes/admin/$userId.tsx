@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
 import { features, roleLabels, rolePresets, useAccess, type Role } from "@/lib/access-store";
@@ -24,8 +25,70 @@ const roles: Role[] = ["student", "parent", "teacher", "admin"];
 function ManageAccess() {
   const { userId } = Route.useParams();
   const { t } = useApp();
-  const { users, togglePermission, setRole, toggleStatus, remove } = useAccess();
+  const { users, togglePermission, setRole, toggleStatus, remove, changePIN, resetPIN } = useAccess();
   const user = users.find((u) => u.id === userId);
+
+  // State for PIN change dialog
+  const [showChangePINDialog, setShowChangePINDialog] = useState(false);
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [pinSuccess, setPinSuccess] = useState(false);
+
+  // State for PIN reset
+  const [showResetPINConfirm, setShowResetPINConfirm] = useState(false);
+  const [resetPINValue, setResetPINValue] = useState<string | null>(null);
+  const [showResetPINDisplay, setShowResetPINDisplay] = useState(false);
+
+  const handleChangePINSubmit = () => {
+    setPinError(null);
+    setPinSuccess(false);
+
+    if (!newPin || newPin.length !== 4 || !/^\d+$/.test(newPin)) {
+      setPinError(t("PIN must be exactly 4 digits", "পিন হতে হবে ঠিক ৪ সংখ্যা"));
+      return;
+    }
+
+    if (newPin !== confirmPin) {
+      setPinError(t("PINs do not match", "পিনগুলো মিলছে না"));
+      return;
+    }
+
+    if (!user) return;
+
+    changePIN(user.id, newPin);
+    setPinSuccess(true);
+    setNewPin("");
+    setConfirmPin("");
+
+    setTimeout(() => {
+      setShowChangePINDialog(false);
+      setPinSuccess(false);
+    }, 1500);
+  };
+
+  const handleResetPINConfirm = () => {
+    if (!user) return;
+
+    const newPin = resetPIN(user.id);
+    setResetPINValue(newPin);
+    setShowResetPINConfirm(false);
+    setShowResetPINDisplay(true);
+
+    setTimeout(() => {
+      setShowResetPINDisplay(false);
+      setResetPINValue(null);
+    }, 5000);
+  };
+
+  const handleClosePINDialog = () => {
+    if (!pinSuccess) {
+      setShowChangePINDialog(false);
+      setNewPin("");
+      setConfirmPin("");
+      setPinError(null);
+    }
+  };
 
   if (!user) {
     return (
@@ -144,6 +207,156 @@ function ManageAccess() {
           </button>
         </div>
       </SectionCard>
+
+      <SectionCard title={t("Security", "নিরাপত্তা")}>
+        <p className="mb-3 text-[11px] text-muted-foreground">
+          {t("Manage the user's 4-digit PIN", "ইউজারের ৪-সংখ্যার পিন পরিচালনা করুন")}
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowChangePINDialog(true)}
+            className="tap flex-1 rounded-2xl bg-muted py-3 text-sm font-bold"
+          >
+            {t("Change PIN", "পিন পরিবর্তন")}
+          </button>
+          <button
+            onClick={() => setShowResetPINConfirm(true)}
+            className="tap flex-1 rounded-2xl bg-muted py-3 text-sm font-bold"
+          >
+            {t("Reset PIN", "পিন পুনরায় সেট")}
+          </button>
+        </div>
+      </SectionCard>
+
+      {/* Change PIN Dialog */}
+      {showChangePINDialog && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
+          <div className="w-full max-w-sm rounded-t-3xl bg-card p-6 sm:rounded-2xl">
+            <h2 className="mb-4 text-lg font-bold">{t("Change PIN", "পিন পরিবর্তন")}</h2>
+
+            {pinSuccess ? (
+              <div className="mb-4 rounded-2xl bg-success/12 p-3 text-center text-sm font-bold text-success">
+                {t("PIN changed successfully!", "পিন সফলভাবে পরিবর্তিত হয়েছে!")}
+              </div>
+            ) : (
+              <>
+                <div className="mb-3 space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">
+                    {t("New PIN", "নতুন পিন")}
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={newPin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setNewPin(val);
+                      setPinError(null);
+                    }}
+                    placeholder="••••"
+                    className="w-full rounded-2xl border border-border bg-muted px-4 py-2.5 text-center text-sm font-bold tracking-widest outline-none"
+                  />
+                </div>
+
+                <div className="mb-3 space-y-2">
+                  <label className="text-xs font-bold text-muted-foreground">
+                    {t("Confirm PIN", "পিন নিশ্চিত করুন")}
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={confirmPin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setConfirmPin(val);
+                      setPinError(null);
+                    }}
+                    placeholder="••••"
+                    className="w-full rounded-2xl border border-border bg-muted px-4 py-2.5 text-center text-sm font-bold tracking-widest outline-none"
+                  />
+                </div>
+
+                {pinError && (
+                  <div className="mb-3 rounded-2xl bg-destructive/12 p-3 text-center text-xs font-bold text-destructive">
+                    {pinError}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleClosePINDialog}
+                    className="tap flex-1 rounded-2xl border border-border py-3 text-sm font-bold"
+                  >
+                    {t("Cancel", "বাতিল")}
+                  </button>
+                  <button
+                    onClick={handleChangePINSubmit}
+                    className="tap flex-1 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+                  >
+                    {t("Save", "সংরক্ষণ")}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Reset PIN Confirmation */}
+      {showResetPINConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
+          <div className="w-full max-w-sm rounded-t-3xl bg-card p-6 sm:rounded-2xl">
+            <h2 className="mb-3 text-lg font-bold">{t("Reset PIN?", "পিন পুনরায় সেট করবেন?")}</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {t(
+                "This will generate a new random 4-digit PIN. Make sure to give it to the user.",
+                "এটি একটি নতুন র‍্যান্ডম ৪-সংখ্যার পিন তৈরি করবে। ইউজারকে এটি দিতে নিশ্চিত করুন।",
+              )}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowResetPINConfirm(false)}
+                className="tap flex-1 rounded-2xl border border-border py-3 text-sm font-bold"
+              >
+                {t("Cancel", "বাতিল")}
+              </button>
+              <button
+                onClick={handleResetPINConfirm}
+                className="tap flex-1 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+              >
+                {t("Reset", "পুনরায় সেট")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset PIN Display */}
+      {showResetPINDisplay && resetPINValue && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center">
+          <div className="w-full max-w-sm rounded-t-3xl bg-card p-6 sm:rounded-2xl">
+            <h2 className="mb-4 text-lg font-bold">{t("New PIN Generated", "নতুন পিন তৈরি হয়েছে")}</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {t(
+                "Share this PIN with the user. It will disappear in a few seconds.",
+                "এই পিনটি ইউজারের সাথে শেয়ার করুন। এটি কয়েক সেকেন্ডে অদৃশ্য হয়ে যাবে।",
+              )}
+            </p>
+            <div className="mb-4 rounded-2xl bg-success/12 p-4 text-center">
+              <p className="text-xs text-muted-foreground">{t("New PIN", "নতুন পিন")}</p>
+              <p className="mt-2 text-4xl font-extrabold tracking-widest text-success">{resetPINValue}</p>
+            </div>
+            <button
+              onClick={() => setShowResetPINDisplay(false)}
+              className="tap w-full rounded-2xl bg-muted py-3 text-sm font-bold"
+            >
+              {t("OK", "ঠিক আছে")}
+            </button>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }

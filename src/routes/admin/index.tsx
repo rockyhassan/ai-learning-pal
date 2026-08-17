@@ -75,6 +75,13 @@ function AdminDashboard() {
               {t("Add, edit, delete periods", "পিরিয়ড যোগ, এডিট, ডিলিট")}
             </p>
           </Link>
+          <Link to="/admin/exams" className="tap rounded-2xl bg-muted p-3">
+            <span className="text-xl">📝</span>
+            <p className="mt-1 text-sm font-bold">{t("Exams", "পরীক্ষা")}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {t("Add, edit, delete exams", "পরীক্ষা যোগ, এডিট, ডিলিট")}
+            </p>
+          </Link>
         </div>
       </SectionCard>
 

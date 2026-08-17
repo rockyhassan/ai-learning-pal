@@ -1,17 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Camera, ChevronRight, Image, PlusCircle, RefreshCw } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
-import { homework } from "@/lib/mock-data";
-import { todayKey, useSchoolContent } from "@/lib/school-content";
+import { useSchoolContent, formatDiaryDate } from "@/lib/school-content";
+import { SubjectHistory } from "@/components/SubjectHistory";
 
 export const Route = createFileRoute("/homework/")({
   head: () => ({
     meta: [
       { title: "Homework — Wafi" },
-      { name: "description", content: "Track today's homework, add it by camera scan or screenshot, and solve it with AI." },
+      {
+        name: "description",
+        content:
+          "View today's school diary entries, classwork and homework assignments.",
+      },
       { property: "og:title", content: "Homework — Wafi" },
-      { property: "og:description", content: "Pending and completed homework with AI help." },
+      { property: "og:description", content: "School diary with classwork and homework." },
     ],
   }),
   component: HomeworkList,
@@ -19,96 +24,113 @@ export const Route = createFileRoute("/homework/")({
 
 function HomeworkList() {
   const { t } = useApp();
-  const pending = homework.filter((h) => h.status === "pending");
-  const done = homework.filter((h) => h.status === "completed");
   const { diary } = useSchoolContent();
-  const today = diary.filter((d) => d.date === todayKey());
+  const [activeTab, setActiveTab] = useState<"school" | "subject">("school");
+
+  // Group all diary entries by date, sorted descending (newest first)
+  const diaryByDate = diary
+    .sort((a, b) => {
+      // Handle undefined date fields safely
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1; // Entries without date sort to end
+      if (!b.date) return -1;
+      // Both have dates: sort descending (newest first)
+      return b.date.localeCompare(a.date);
+    })
+    .reduce(
+      (acc, entry) => {
+        if (!entry.date) return acc; // Skip entries without date
+        if (!acc[entry.date]) {
+          acc[entry.date] = [];
+        }
+        acc[entry.date].push(entry);
+        return acc;
+      },
+      {} as Record<string, typeof diary>,
+    );
+
+  const sortedDates = Object.keys(diaryByDate).sort((a, b) => b.localeCompare(a));
 
   return (
-    <PageShell title={t("Homework", "হোমওয়ার্ক")} subtitle={t("Today", "আজ")}>
-      <div className="grid grid-cols-4 gap-2">
-        {[
-          { icon: Image, en: "Screenshot", bn: "স্ক্রিনশট" },
-          { icon: Camera, en: "Camera", bn: "ক্যামেরা" },
-          { icon: PlusCircle, en: "Manual", bn: "নিজে" },
-          { icon: RefreshCw, en: "Sync", bn: "সিঙ্ক" },
-        ].map((a) => (
-          <button
-            key={a.en}
-            className="tap flex flex-col items-center gap-1 rounded-2xl border border-border bg-card px-1 py-3 shadow-soft"
-          >
-            <a.icon className="size-5 text-primary" />
-            <span className="text-[10px] font-semibold">{t(a.en, a.bn)}</span>
-          </button>
-        ))}
+    <PageShell title={t("Homework", "হোমওয়ার্ক")}>
+      {/* Tab Navigation */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActiveTab("school")}
+          className={`tap flex-1 rounded-2xl px-4 py-3 font-semibold text-sm transition-colors ${
+            activeTab === "school"
+              ? "bg-primary text-primary-foreground shadow-soft"
+              : "border border-border bg-card text-foreground hover:bg-muted"
+          }`}
+        >
+          {t("School Diary", "স্কুল ডায়েরি")}
+        </button>
+        <button
+          onClick={() => setActiveTab("subject")}
+          className={`tap flex-1 rounded-2xl px-4 py-3 font-semibold text-sm transition-colors ${
+            activeTab === "subject"
+              ? "bg-primary text-primary-foreground shadow-soft"
+              : "border border-border bg-card text-foreground hover:bg-muted"
+          }`}
+        >
+          {t("Subject History", "বিষয়ের ইতিহাস")}
+        </button>
       </div>
 
-      <SectionCard
-        title={t("School Diary", "স্কুল ডায়েরি")}
-        hint={<Pill tone="primary">{today.length}</Pill>}
-      >
-        {today.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t("No diary entries for today.", "আজকের কোনো ডায়েরি এন্ট্রি নেই।")}
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {today.map((d) => (
-              <li key={d.id} className="rounded-2xl bg-muted p-3">
-                <p className="text-sm font-bold">{d.subject}</p>
-                <p className="mt-1 text-[10px] font-bold uppercase text-muted-foreground">C.W</p>
-                <p className="text-xs">{d.cw || "—"}</p>
-                <p className="mt-1 text-[10px] font-bold uppercase text-muted-foreground">H.W</p>
-                <p className="text-xs">{d.hw || "—"}</p>
-                {d.answer ? <p className="mt-1 text-xs text-primary">{d.answer}</p> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </SectionCard>
-
-      <SectionCard title={t("Pending", "বাকি আছে")} hint={<Pill tone="warning">{pending.length}</Pill>}>
-        <ul className="space-y-2">
-          {pending.map((h) => (
-            <li key={h.id}>
-              <Link
-                to="/homework/$homeworkId"
-                params={{ homeworkId: h.id }}
-                className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{t(h.title, h.titleBn)}</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {h.subject} · {h.due}
+      {/* School Diary Tab */}
+      {activeTab === "school" && (
+        <SectionCard
+          title={t("School Diary", "স্কুল ডায়েরি")}
+          hint={<Pill tone="primary">{diary.length}</Pill>}
+        >
+          {diary.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              {t("No diary entries for today.", "আজকের কোনো ডায়েরি এন্ট্রি নেই।")}
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {sortedDates.map((date) => (
+                <div key={date}>
+                  <p className="text-xs font-bold text-muted-foreground mb-2">
+                    {formatDiaryDate(date)}
                   </p>
+                  <ul className="space-y-2">
+                    {diaryByDate[date].map((d) => (
+                      <li key={d.id}>
+                        <Link
+                          to="/homework/diary/$diaryId"
+                          params={{ diaryId: d.id }}
+                          className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
+                        >
+                          <div className="flex-1">
+                            <p className="truncate text-sm font-semibold">{d.subject}</p>
+                            <div className="mt-1 space-y-0.5">
+                              {d.cw && (
+                                <p className="text-[11px] text-muted-foreground">
+                                  {t("C.W", "সি.ডব্লু")}: {d.cw}
+                                </p>
+                              )}
+                              {d.hw && (
+                                <p className="text-[11px] text-muted-foreground">
+                                  {t("H.W", "এইচ.ডব্লু")}: {d.hw}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight className="size-4 text-muted-foreground" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <Pill tone="primary">AI Solve</Pill>
-                <ChevronRight className="size-4 text-muted-foreground" />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </SectionCard>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      )}
 
-      <SectionCard title={t("Completed", "সম্পন্ন")} hint={<Pill tone="success">{done.length}</Pill>}>
-        <ul className="space-y-2">
-          {done.map((h) => (
-            <li key={h.id}>
-              <Link
-                to="/homework/$homeworkId"
-                params={{ homeworkId: h.id }}
-                className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-3 opacity-80"
-              >
-                <span className="text-success">✓</span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold line-through">{t(h.title, h.titleBn)}</p>
-                  <p className="text-[11px] text-muted-foreground">{h.subject}</p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </SectionCard>
+      {/* Subject History Tab */}
+      {activeTab === "subject" && <SubjectHistory diary={diary} />}
     </PageShell>
   );
 }

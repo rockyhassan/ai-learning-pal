@@ -100,7 +100,7 @@ function Settings() {
             <button
               onClick={() => {
                 signOut();
-                navigate({ to: "/login" });
+                navigate({ to: "/" });
               }}
               className="tap mt-3 w-full rounded-2xl bg-destructive/12 py-3 text-sm font-bold text-destructive"
             >

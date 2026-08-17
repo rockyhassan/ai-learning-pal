@@ -145,41 +145,6 @@ export const subjects: Subject[] = [
   },
 ];
 
-export const homework = [
-  {
-    id: "hw-1",
-    subject: "English",
-    title: "Write 5 sentences about your family",
-    titleBn: "পরিবার নিয়ে ৫টি বাক্য লেখো",
-    due: "Today 8:00 PM",
-    status: "pending" as const,
-  },
-  {
-    id: "hw-2",
-    subject: "Math",
-    title: "Exercise 3.2 — Question 1 to 8",
-    titleBn: "অনুশীলনী ৩.২ — প্রশ্ন ১-৮",
-    due: "Today 9:00 PM",
-    status: "pending" as const,
-  },
-  {
-    id: "hw-3",
-    subject: "Science",
-    title: "Draw the water cycle",
-    titleBn: "পানিচক্রের চিত্র আঁকো",
-    due: "Tomorrow",
-    status: "completed" as const,
-  },
-  {
-    id: "hw-4",
-    subject: "Bangla",
-    title: "কবিতা মুখস্থ — প্রথম ৮ লাইন",
-    titleBn: "কবিতা মুখস্থ — প্রথম ৮ লাইন",
-    due: "Today",
-    status: "completed" as const,
-  },
-];
-
 export const routine = [
   { time: "08:00", subject: "Assembly", teacher: "—", room: "Field" },
   { time: "08:30", subject: "English", teacher: "Ms. Nabila", room: "4A" },

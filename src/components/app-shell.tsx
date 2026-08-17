@@ -2,15 +2,28 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   ArrowLeft,
   BookOpen,
+  Calendar,
   Home,
   Languages,
   NotebookPen,
   ScanLine,
-  Sparkles,
+  Settings,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useApp } from "@/lib/app-state";
 import { cn } from "@/lib/utils";
+
+export function SettingsButton() {
+  return (
+    <Link
+      to="/settings"
+      className="tap inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-soft"
+      aria-label="Settings"
+    >
+      <Settings className="size-3.5" />
+    </Link>
+  );
+}
 
 export function LangToggle() {
   const { lang, toggleLang } = useApp();
@@ -31,7 +44,7 @@ const nav = [
   { to: "/study", icon: BookOpen, en: "Study", bn: "পড়া" },
   { to: "/scan", icon: ScanLine, en: "Scan", bn: "স্ক্যান" },
   { to: "/homework", icon: NotebookPen, en: "Homework", bn: "হোমওয়ার্ক" },
-  { to: "/ai-teacher", icon: Sparkles, en: "AI", bn: "এআই" },
+  { to: "/planner", icon: Calendar, en: "Routine", bn: "রুটিন" },
 ] as const;
 
 export function BottomNav() {
@@ -39,7 +52,7 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-lg border-t border-border bg-card/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+    <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-[800px] -translate-x-1/2 border-t border-border bg-card/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur">
       <ul className="flex items-stretch justify-between">
         {nav.map((item) => {
           const active = pathname.startsWith(item.to);
@@ -87,7 +100,7 @@ export function PageShell({
   hideNav?: boolean;
 }) {
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-28">
+    <div className="min-h-screen bg-background pb-28">
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-3">
           {back ? (

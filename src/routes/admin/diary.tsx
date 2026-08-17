@@ -4,6 +4,8 @@ import { useState } from "react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
 import { parseDiaryText, todayKey, useSchoolContent, type DiaryEntry } from "@/lib/school-content";
+import { useAccess } from "@/lib/access-store";
+import { DiaryContentEditor } from "@/components/DiaryContentEditor";
 
 export const Route = createFileRoute("/admin/diary")({
   head: () => ({
@@ -21,6 +23,8 @@ const empty = { subject: "", cw: "", hw: "", answer: "" };
 
 function AdminDiary() {
   const { t } = useApp();
+  const { currentUser } = useAccess();
+  const isAdmin = currentUser?.role === "admin";
   const { diary, addDiary, addDiaryMany, updateDiary, removeDiary } = useSchoolContent();
   const [date, setDate] = useState(todayKey());
   const [draft, setDraft] = useState(empty);
@@ -96,24 +100,39 @@ function AdminDiary() {
             placeholder={t("Subject", "বিষয়")}
             className={field}
           />
-          <input
-            value={draft.cw}
-            onChange={(e) => setDraft({ ...draft, cw: e.target.value })}
-            placeholder="C.W"
-            className={field}
-          />
-          <input
-            value={draft.hw}
-            onChange={(e) => setDraft({ ...draft, hw: e.target.value })}
-            placeholder="H.W"
-            className={field}
-          />
-          <input
-            value={draft.answer}
-            onChange={(e) => setDraft({ ...draft, answer: e.target.value })}
-            placeholder={t("Answers (optional)", "উত্তর (ঐচ্ছিক)")}
-            className={field}
-          />
+          <div>
+            <label className="text-xs font-bold text-muted-foreground">C.W (Classwork)</label>
+            <div className="mt-1">
+              <DiaryContentEditor
+                value={draft.cw}
+                onChange={(value) => setDraft({ ...draft, cw: value })}
+                placeholder={t("Enter classwork details...", "ক্লাসওয়ার্কের বিবরণ লিখুন...")}
+                rows={2}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-muted-foreground">H.W (Homework)</label>
+            <div className="mt-1">
+              <DiaryContentEditor
+                value={draft.hw}
+                onChange={(value) => setDraft({ ...draft, hw: value })}
+                placeholder={t("Enter homework details...", "হোমওয়ার্কের বিবরণ লিখুন...")}
+                rows={2}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-muted-foreground">{t("Answers (optional)", "উত্তর (ঐচ্ছিক)")}</label>
+            <div className="mt-1">
+              <DiaryContentEditor
+                value={draft.answer}
+                onChange={(value) => setDraft({ ...draft, answer: value })}
+                placeholder={t("Write or format your answer...", "আপনার উত্তর লিখুন বা ফরম্যাট করুন...")}
+                rows={3}
+              />
+            </div>
+          </div>
           <button
             type="submit"
             className="tap flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
@@ -195,14 +214,39 @@ function DiaryRow({
   return (
     <li className="space-y-2 rounded-2xl bg-muted p-3">
       <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className={field} />
-      <input value={form.cw} onChange={(e) => setForm({ ...form, cw: e.target.value })} placeholder="C.W" className={field} />
-      <input value={form.hw} onChange={(e) => setForm({ ...form, hw: e.target.value })} placeholder="H.W" className={field} />
-      <input
-        value={form.answer}
-        onChange={(e) => setForm({ ...form, answer: e.target.value })}
-        placeholder={t("Answers", "উত্তর")}
-        className={field}
-      />
+      <div>
+        <label className="text-xs font-bold text-muted-foreground">C.W (Classwork)</label>
+        <div className="mt-1">
+          <DiaryContentEditor
+            value={form.cw}
+            onChange={(value) => setForm({ ...form, cw: value })}
+            placeholder="Enter classwork details..."
+            rows={2}
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-bold text-muted-foreground">H.W (Homework)</label>
+        <div className="mt-1">
+          <DiaryContentEditor
+            value={form.hw}
+            onChange={(value) => setForm({ ...form, hw: value })}
+            placeholder="Enter homework details..."
+            rows={2}
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-bold text-muted-foreground">{t("Answers", "উত্তর")}</label>
+        <div className="mt-1">
+          <DiaryContentEditor
+            value={form.answer}
+            onChange={(value) => setForm({ ...form, answer: value })}
+            placeholder={t("Write or format your answer...", "আপনার উত্তর লিখুন বা ফরম্যাট করুন...")}
+            rows={3}
+          />
+        </div>
+      </div>
       <div className="flex gap-2">
         <button
           onClick={() => {

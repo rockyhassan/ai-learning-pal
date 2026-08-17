@@ -1,0 +1,30 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Diary collection: 
+    // - Allows reads to all (for students/parents/teachers viewing diary)
+    // - Allows writes ONLY to the authenticated admin Google account
+    // 
+    // IMPORTANT: Update the email address below to match your VITE_FIREBASE_ADMIN_EMAIL
+    // Replace "YOUR_ADMIN_EMAIL_HERE" with your actual Google account email
+    match /diary/{diaryId} {
+      // All users can read diary (shared classroom information)
+      allow read: if true;
+      
+      // Only the authenticated admin Google account can write
+      // request.auth is set when user is authenticated with Firebase
+      // request.auth.token.email contains the authenticated user's email
+      // This email MUST match your VITE_FIREBASE_ADMIN_EMAIL configuration
+      allow write: if request.auth != null
+                   && request.auth.token.email == "rockyhsn9@gmail.com";
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+

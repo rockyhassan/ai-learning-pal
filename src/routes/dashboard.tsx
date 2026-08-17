@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronRight, Flame, Play, Send } from "lucide-react";
-import { BottomNav, LangToggle, Pill, SectionCard } from "@/components/app-shell";
-import { Progress } from "@/components/ui/progress";
+import { ChevronRight, Send, Settings, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { BottomNav, LangToggle, SettingsButton, SectionCard } from "@/components/app-shell";
+import { TodayRoutineCard } from "@/components/today-routine-card";
 import { useApp } from "@/lib/app-state";
 import { useAccess } from "@/lib/access-store";
 import { featureForRoute, isSessionOnlyRoute } from "@/lib/route-access";
-import { exams, homework, routine, student, weeklyProgress } from "@/lib/mock-data";
+import { useSchoolContent, formatDiaryDate, calculateDaysRemaining, formatDaysRemaining, getDateCategory } from "@/lib/school-content";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -38,23 +39,65 @@ const quickLinks = [
   { to: "/achievements", emoji: "🏆", en: "Awards", bn: "অর্জন" },
   { to: "/ai-memory", emoji: "🤖", en: "AI Memory", bn: "এআই মেমোরি" },
   { to: "/profile", emoji: "👦", en: "Profile", bn: "প্রোফাইল" },
-  { to: "/settings", emoji: "⚙️", en: "Settings", bn: "সেটিংস" },
 ];
 
 function Dashboard() {
   const { t } = useApp();
-  const { can } = useAccess();
+  const { can, currentUser } = useAccess();
+  const { routine, diary, exams } = useSchoolContent();
+  const [expandedOlderDates, setExpandedOlderDates] = useState<Set<string>>(new Set());
+
   const visibleLinks = quickLinks.filter((q) => {
     if (isSessionOnlyRoute(q.to)) return true;
     const feature = featureForRoute(q.to);
     return !feature || can(feature);
   });
-  const pending = homework.filter((h) => h.status === "pending");
-  const done = homework.filter((h) => h.status === "completed");
-  const todayMinutes = weeklyProgress[5]?.minutes ?? 0;
+  
+  // Group all diary entries by date, sorted descending (newest first)
+  const diaryByDate = diary
+    .sort((a, b) => {
+      // Handle undefined date fields safely
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1; // Entries without date sort to end
+      if (!b.date) return -1;
+      // Both have dates: sort descending (newest first)
+      return b.date.localeCompare(a.date);
+    })
+    .reduce((acc, entry) => {
+      if (!entry.date) return acc; // Skip entries without date
+      if (!acc[entry.date]) {
+        acc[entry.date] = [];
+      }
+      acc[entry.date].push(entry);
+      return acc;
+    }, {} as Record<string, typeof diary>);
+
+  const sortedDates = Object.keys(diaryByDate).sort((a, b) => b.localeCompare(a));
+
+  // Toggle expand/collapse for an older date
+  const toggleDateExpansion = (date: string) => {
+    setExpandedOlderDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  };
+
+  // Check if a date group should be expanded
+  const isDateExpanded = (date: string): boolean => {
+    const category = getDateCategory(date);
+    if (category === "today" || category === "yesterday") {
+      return true; // Always expanded
+    }
+    return expandedOlderDates.has(date); // Based on state
+  };
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-28">
+    <div className="min-h-screen bg-background pb-28">
       <header className="gradient-hero px-4 pb-8 pt-5 text-primary-foreground">
         <div className="flex items-center gap-3">
           <Link to="/profile" className="tap grid size-11 place-items-center rounded-2xl bg-primary-foreground/15 text-xl">
@@ -62,123 +105,107 @@ function Dashboard() {
           </Link>
           <div className="flex-1">
             <p className="text-xs opacity-80">{t("Good morning", "শুভ সকাল")}</p>
-            <p className="text-lg font-bold leading-tight">{student.nickname}</p>
+            <p className="text-lg font-bold leading-tight">{currentUser?.name?.split(" ")[0] || "Wafi"}</p>
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary-foreground/15 px-3 py-1.5 text-xs font-bold">
-            <Flame className="size-3.5" /> {student.streak}
-          </span>
-          <LangToggle />
-        </div>
-
-        <div className="mt-5 rounded-3xl bg-primary-foreground/12 p-4 backdrop-blur">
-          <div className="flex items-center justify-between text-xs font-semibold">
-            <span>{t("Today's Goal", "আজকের লক্ষ্য")}</span>
-            <span>
-              {todayMinutes}/30 {t("min", "মিনিট")}
-            </span>
-          </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary-foreground/25">
-            <div
-              className="h-full rounded-full gradient-sun"
-              style={{ width: `${Math.min(100, (todayMinutes / 30) * 100)}%` }}
-            />
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold">
-            <div className="rounded-2xl bg-primary-foreground/12 py-2">
-              30 {t("min", "মিনিট")}
-            </div>
-            <div className="rounded-2xl bg-primary-foreground/12 py-2">3 {t("Lessons", "লেসন")}</div>
-            <div className="rounded-2xl bg-primary-foreground/12 py-2">2 {t("Quizzes", "কুইজ")}</div>
+          <div className="flex items-center gap-2">
+            <SettingsButton />
+            <LangToggle />
           </div>
         </div>
       </header>
 
       <main className="-mt-4 animate-pop space-y-4 rounded-t-[2rem] bg-background px-4 pt-5">
         <SectionCard
-          title={t("Continue Learning", "যেখানে শেষ করেছিলে")}
-          hint={<Pill tone="primary">English</Pill>}
-        >
-          <Link to="/lesson/$lessonId" params={{ lessonId: "english-3-1" }} className="tap flex items-center gap-3">
-            <span className="grid size-12 place-items-center rounded-2xl gradient-sun text-xl">📘</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">Chapter 3 · Present Simple</p>
-              <Progress value={45} className="mt-2 h-1.5" />
-            </div>
-            <span className="grid size-9 place-items-center rounded-full bg-primary text-primary-foreground">
-              <Play className="size-4" />
-            </span>
-          </Link>
-        </SectionCard>
-
-        <SectionCard
-          title={t("Today's Homework", "আজকের হোমওয়ার্ক")}
+          title={t("School Diary", "স্কুল ডায়েরি")}
           hint={
             <Link to="/homework" className="text-xs font-bold text-primary">
               {t("All", "সব")}
             </Link>
           }
         >
-          <div className="mb-3 flex gap-2">
-            <Pill tone="warning">
-              {pending.length} {t("Pending", "বাকি")}
-            </Pill>
-            <Pill tone="success">
-              {done.length} {t("Completed", "শেষ")}
-            </Pill>
-          </div>
-          <ul className="space-y-2">
-            {homework.slice(0, 3).map((h) => (
-              <li key={h.id}>
-                <Link
-                  to="/homework/$homeworkId"
-                  params={{ homeworkId: h.id }}
-                  className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
-                >
-                  <span
-                    className={`size-2.5 rounded-full ${h.status === "pending" ? "bg-warning" : "bg-success"}`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">{t(h.title, h.titleBn)}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {h.subject} · {h.due}
-                    </p>
+          {diary.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("No school diary available.", "কোন স্কুল ডায়েরি পাওয়া যায়নি।")}</p>
+          ) : (
+            <div className="space-y-4">
+              {sortedDates.map((date) => {
+                const category = getDateCategory(date);
+                const isExpanded = isDateExpanded(date);
+
+                return (
+                  <div key={date}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-xs font-bold text-muted-foreground">{formatDiaryDate(date)}</p>
+                      {category === "older" && (
+                        <button
+                          onClick={() => toggleDateExpansion(date)}
+                          className="ml-auto tap flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                          aria-expanded={isExpanded}
+                        >
+                          <span>{isExpanded ? t("Hide", "লুকান") : t("Show", "দেখান")}</span>
+                          <ChevronDown
+                            className="size-3.5 transition-transform duration-200"
+                            style={{
+                              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                            }}
+                          />
+                        </button>
+                      )}
+                    </div>
+                    {isExpanded && (
+                      <ul className="space-y-2 animate-in fade-in duration-200">
+                        {diaryByDate[date].map((d) => (
+                          <li key={d.id}>
+                            <Link
+                              to="/homework/diary/$diaryId"
+                              params={{ diaryId: d.id }}
+                              className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
+                            >
+                              <div className="flex-1">
+                                <p className="truncate text-sm font-semibold">{d.subject}</p>
+                                <div className="mt-1 space-y-0.5">
+                                  {d.cw && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {t("C.W", "সি.ডব্লু")}: {d.cw}
+                                    </p>
+                                  )}
+                                  {d.hw && (
+                                    <p className="text-[11px] text-muted-foreground">
+                                      {t("H.W", "এইচ.ডব্লু")}: {d.hw}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <ChevronRight className="size-4 text-muted-foreground" />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  <ChevronRight className="size-4 text-muted-foreground" />
-                </Link>
-              </li>
-            ))}
-          </ul>
+                );
+              })}
+            </div>
+          )}
         </SectionCard>
 
-        <div className="grid grid-cols-2 gap-3">
-          <SectionCard title={t("Classes", "ক্লাস")} className="col-span-1">
-            <ul className="space-y-1.5 text-xs">
-              {routine.slice(1, 5).map((r) => (
-                <li key={r.time} className="flex gap-2">
-                  <span className="font-bold text-primary">{r.time}</span>
-                  <span className="truncate">{r.subject}</span>
-                </li>
-              ))}
-            </ul>
-            <Link to="/planner" className="mt-3 block text-[11px] font-bold text-primary">
-              {t("Full routine", "পুরো রুটিন")} →
-            </Link>
-          </SectionCard>
+        <TodayRoutineCard />
 
-          <SectionCard title={t("Exams", "পরীক্ষা")} className="col-span-1">
-            <ul className="space-y-2">
-              {exams.slice(0, 2).map((e) => (
-                <li key={e.name} className="rounded-2xl bg-muted p-2">
+        <SectionCard title={t("Exams", "পরীক্ষা")}>
+          <ul className="space-y-2">
+            {exams.slice(0, 2).map((e) => {
+              const daysRemaining = calculateDaysRemaining(e.date);
+              return (
+                <li key={e.id} className="rounded-2xl bg-muted p-2">
                   <p className="text-xs font-bold leading-tight">{e.name}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">{e.chapter}</p>
                   <p className="mt-1 text-sm font-extrabold text-destructive">
-                    {e.days} {t("days left", "দিন বাকি")}
+                    {formatDaysRemaining(daysRemaining)}
                   </p>
                 </li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
+              );
+            })}
+          </ul>
+        </SectionCard>
 
         <SectionCard title={t("AI Teacher", "এআই শিক্ষক")}>
           <Link
