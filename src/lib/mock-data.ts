@@ -8,12 +8,12 @@ export type Subject = {
 };
 
 export const student = {
-  name: "Wafi Rahman",
+  name: "Muhammad Affan Hassan Wafi",
   nickname: "Wafi",
-  className: "Class 4",
+  className: "Grade-3",
   section: "A",
-  roll: "07",
-  school: "Sunrise Model School",
+  roll: "08",
+  school: "KCIS",
   board: "NCTB",
   medium: "English",
   birthday: "2016-04-12",
@@ -147,11 +147,11 @@ export const subjects: Subject[] = [
 
 export const routine = [
   { time: "08:00", subject: "Assembly", teacher: "—", room: "Field" },
-  { time: "08:30", subject: "English", teacher: "Ms. Nabila", room: "4A" },
-  { time: "09:20", subject: "Math", teacher: "Mr. Rafiq", room: "4A" },
+  { time: "08:30", subject: "English", teacher: "Ms. Nabila", room: "3A" },
+  { time: "09:20", subject: "Math", teacher: "Mr. Rafiq", room: "3A" },
   { time: "10:10", subject: "Break", teacher: "—", room: "—" },
   { time: "10:40", subject: "Science", teacher: "Ms. Tania", room: "Lab 1" },
-  { time: "11:30", subject: "Bangla", teacher: "Mr. Kamal", room: "4A" },
+  { time: "11:30", subject: "Bangla", teacher: "Mr. Kamal", room: "3A" },
   { time: "12:20", subject: "ICT", teacher: "Ms. Rumi", room: "Lab 2" },
 ];
 

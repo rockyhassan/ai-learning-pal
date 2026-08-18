@@ -7,9 +7,21 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { auth } from "./firebase";
-import { signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut } from "firebase/auth";
-import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "./firebase";
+import {
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp,
+} from "firebase/firestore";
+import { toast } from "sonner";
 
 export type Role = "student" | "parent" | "teacher" | "admin";
 
@@ -109,201 +121,212 @@ export const rolePresets: Record<Role, FeatureKey[]> = {
 };
 
 export type AccessUser = {
-  id: string;
+  uid: string;
   name: string;
   email: string;
   role: Role;
   status: "active" | "invited" | "disabled";
   permissions: FeatureKey[];
-  pin: string;
 };
 
-const seedUsers: AccessUser[] = [];
-
 type AccessState = {
-  users: AccessUser[];
   currentUser: AccessUser | null;
   authReady: boolean;
-  signIn: (email: string, pin: string) => { ok: boolean; reason?: "not-found" | "disabled" | "invalid-pin" };
+  signInWithGoogle: () => Promise<{ ok: boolean; reason?: string }>;
   signOut: () => void;
-  signInAsAdmin: () => Promise<{ ok: boolean; reason?: string }>;
   can: (key: FeatureKey) => boolean;
-  invite: (input: { name: string; email: string; role: Role }) => void;
-  togglePermission: (userId: string, key: FeatureKey) => void;
-  setRole: (userId: string, role: Role) => void;
-  toggleStatus: (userId: string) => void;
-  remove: (userId: string) => void;
-  changePIN: (userId: string, newPin: string) => void;
-  resetPIN: (userId: string) => string;
 };
 
 const AccessContext = createContext<AccessState | null>(null);
 
 const SESSION_KEY = "wafi.session.email";
-const USERS_KEY = "wafi.users-access";
-
-/** Generate a random 4-digit numeric PIN */
-function generatePIN(): string {
-  return Math.floor(1000 + Math.random() * 8000).toString();
-}
+const ADMIN_EMAIL = (import.meta.env.VITE_FIREBASE_ADMIN_EMAIL || "").trim().toLowerCase();
 
 export function AccessProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<AccessUser[]>(seedUsers);
-  const [email, setEmail] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<AccessUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const adminEmail = import.meta.env['VITE_FIREBASE_ADMIN_EMAIL'] || '';
 
-  // DIAGNOSTIC: Log seedUsers on initialization
-  console.log("[DIAG] AccessProvider initialized with seedUsers:", {
-    length: seedUsers.length,
-    users: seedUsers.map(u => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      status: u.status,
-    })),
-  });
-
-  // Listen for Firebase auth state changes (for admin login)
+  // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.log("[DIAG] onAuthStateChanged fired:", {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("[ACCESS] onAuthStateChanged fired:", {
         hasUser: !!firebaseUser,
         firebaseUserEmail: firebaseUser?.email,
         firebaseUserUid: firebaseUser?.uid,
-        adminEmail: adminEmail ? `${adminEmail.substring(0, 3)}***@gmail.com` : "NOT SET",
-        emailMatch: firebaseUser?.email?.toLowerCase() === adminEmail.toLowerCase(),
       });
-      
-      if (firebaseUser && firebaseUser.email?.toLowerCase() === adminEmail.toLowerCase()) {
-        console.log("[DIAG] onAuthStateChanged: Email MATCHES admin");
-        // Firebase user is authenticated as the admin
-        // Check if admin user exists in users list, if not create it
-        setUsers((prev) => {
-          const adminExists = prev.some((u) => u.role === "admin" && u.email.toLowerCase() === adminEmail.toLowerCase());
-          console.log("[DIAG] onAuthStateChanged: adminExists =", adminExists);
-          if (!adminExists) {
-            console.log("[DIAG] onAuthStateChanged: Adding admin user to users array");
-            return [
-              ...prev,
-              {
-                id: "u-firebase-admin",
-                name: firebaseUser.displayName || "Admin",
-                email: firebaseUser.email,
-                role: "admin",
-                status: "active",
-                permissions: rolePresets.admin,
-                pin: "", // No PIN needed for Firebase auth
-              },
-            ];
+
+      if (firebaseUser && firebaseUser.email) {
+        const normalizedEmail = firebaseUser.email.trim().toLowerCase();
+        const uid = firebaseUser.uid;
+
+        try {
+          // 1. Safely fetch both /users/{uid} and /authorizedEmails/{normalizedEmail}
+          const userDocRef = doc(db, "users", uid);
+          const authDocRef = doc(db, "authorizedEmails", normalizedEmail);
+
+          const [userResult, authResult] = await Promise.allSettled([
+            getDoc(userDocRef),
+            getDoc(authDocRef),
+          ]);
+
+          const userDocSnap = userResult.status === "fulfilled" ? userResult.value : null;
+          const authDocSnap = authResult.status === "fulfilled" ? authResult.value : null;
+
+          if (userResult.status === "rejected") {
+            console.error("[AUTH ERROR]: Failed to fetch /users doc:", userResult.reason);
           }
-          return prev;
-        });
-        // Set the authenticated email as current session
-        console.log("[DIAG] onAuthStateChanged: Setting email =", firebaseUser.email);
-        window.localStorage.setItem(SESSION_KEY, firebaseUser.email);
-        setEmail(firebaseUser.email);
+          if (authResult.status === "rejected") {
+            console.error("[AUTH ERROR]: Failed to fetch /authorizedEmails doc:", authResult.reason);
+          }
+
+          // 2. Extract permissions safely
+          let resolvedRole: Role = "student";
+          let resolvedPermissions: FeatureKey[] = rolePresets.student;
+          let resolvedStatus: "active" | "disabled" = "active";
+
+          if (authDocSnap && authDocSnap.exists()) {
+            const authData = authDocSnap.data() as any;
+            resolvedRole = (authData.role as Role) || "student";
+            resolvedStatus = (authData.status as "active" | "disabled") || "active";
+            // Prioritize custom permissions from authorizedEmails, fallback to role preset
+            resolvedPermissions =
+              Array.isArray(authData.permissions) && authData.permissions.length > 0
+                ? (authData.permissions as FeatureKey[])
+                : rolePresets[resolvedRole] || rolePresets.student;
+          } else if (userDocSnap && userDocSnap.exists()) {
+            const userData = userDocSnap.data() as any;
+            resolvedRole = (userData.role as Role) || "student";
+            resolvedStatus = (userData.status as "active" | "disabled") || "active";
+            resolvedPermissions =
+              Array.isArray(userData.permissions) && userData.permissions.length > 0
+                ? (userData.permissions as FeatureKey[])
+                : rolePresets[resolvedRole] || rolePresets.student;
+          } else if (normalizedEmail === import.meta.env.VITE_FIREBASE_ADMIN_EMAIL?.toLowerCase()?.trim()) {
+            resolvedRole = "admin";
+            resolvedPermissions = rolePresets.admin;
+          } else {
+            // Not authorized
+            await firebaseSignOut(auth);
+            setCurrentUser(null);
+            window.localStorage.removeItem(SESSION_KEY);
+            toast.error("Email not authorized. Please contact the administrator.");
+            setAuthReady(true);
+            return;
+          }
+
+          if (resolvedStatus === "disabled") {
+            console.warn("[ACCESS] User account is disabled:", normalizedEmail);
+            toast.error("Your account has been disabled. Please contact the administrator.");
+            await firebaseSignOut(auth);
+            setCurrentUser(null);
+            window.localStorage.removeItem(SESSION_KEY);
+            setAuthReady(true);
+            return;
+          }
+
+          const name = firebaseUser.displayName || normalizedEmail.split("@")[0] || "User";
+
+          // 3. Update/Merge the user's document in /users/{firebaseUser.uid}
+          await setDoc(
+            userDocRef,
+            {
+              uid: firebaseUser.uid,
+              email: normalizedEmail,
+              name,
+              role: resolvedRole,
+              permissions: resolvedPermissions,
+              status: resolvedStatus,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          // 4. Update currentUser state
+          setCurrentUser({
+            uid: firebaseUser.uid,
+            email: normalizedEmail,
+            name,
+            role: resolvedRole,
+            status: resolvedStatus,
+            permissions: resolvedPermissions,
+          });
+          window.localStorage.setItem(SESSION_KEY, normalizedEmail);
+        } catch (err: any) {
+          console.error("[AUTH ERROR]:", err);
+          toast.error("Authentication error. Please contact the administrator.");
+          await firebaseSignOut(auth);
+          setCurrentUser(null);
+          window.localStorage.removeItem(SESSION_KEY);
+        }
       } else {
-        console.log("[DIAG] onAuthStateChanged: Email does NOT match admin");
+        // User signed out or no email
+        setCurrentUser(null);
+        window.localStorage.removeItem(SESSION_KEY);
       }
+
+      setAuthReady(true);
     });
 
     return () => unsubscribe();
-  }, [adminEmail]);
+  }, []);
 
-
-
-  // Load persisted users from localStorage
+  // Listen to /users/{uid} document changes for real-time role/status/permissions updates
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(USERS_KEY);
-      console.log("[DIAG] Loading localStorage wafi.users-access:", {
-        keyExists: raw !== null,
-        rawLength: raw?.length,
-      });
-      
-      if (raw) {
-        const parsed = JSON.parse(raw) as AccessUser[];
-        console.log("[DIAG] Parsed localStorage users:", {
-          parsedLength: parsed.length,
-          parentUsers: parsed
-            .filter(u => u.role === "parent")
-            .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, status: u.status })),
-          studentUsers: parsed
-            .filter(u => u.role === "student")
-            .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, status: u.status })),
-          teacherUsers: parsed
-            .filter(u => u.role === "teacher")
-            .map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, status: u.status })),
-        });
-        
-        // Validate that all required fields exist; fallback to seed if invalid
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Ensure all users have a PIN field; if missing, use seed user's PIN
-          const validatedUsers = parsed.map((u) => {
-            const seedUser = seedUsers.find((su) => su.id === u.id);
-            return {
-              ...u,
-              pin: u.pin ?? seedUser?.pin ?? "",
-            };
+    if (!currentUser?.uid) {
+      return;
+    }
+
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const userData = docSnap.data() as any;
+
+          console.log("[ACCESS] /users document updated:", {
+            uid: currentUser.uid,
+            role: userData.role,
+            status: userData.status,
+            permissionsCount: Array.isArray(userData.permissions) ? userData.permissions.length : undefined,
           });
-          console.log("[DIAG] After validation, setUsers called with", validatedUsers.length, "users");
-          setUsers(validatedUsers);
+
+          const updatedRole = (userData.role as Role) || currentUser.role;
+          const updatedStatus = (userData.status as "active" | "invited" | "disabled") || currentUser.status;
+          const updatedPermissions: FeatureKey[] = Array.isArray(userData.permissions)
+            ? (userData.permissions as FeatureKey[])
+            : rolePresets[updatedRole] || [];
+
+          setCurrentUser((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  name: userData.name || prev.name,
+                  role: updatedRole,
+                  status: updatedStatus,
+                  permissions: updatedPermissions,
+                }
+              : null
+          );
+        } else {
+          // User document deleted - sign out
+          console.warn("[ACCESS] /users document deleted, signing out");
+          firebaseSignOut(auth);
+          setCurrentUser(null);
+          window.localStorage.removeItem(SESSION_KEY);
         }
+      },
+      (error) => {
+        console.error("[ACCESS] Error listening to user document:", error);
       }
-    } catch (e) {
-      console.log("[DIAG] localStorage load error:", e);
-    }
-  }, []);
+    );
 
-  // Persist users to localStorage whenever they change
-  useEffect(() => {
-    try {
-      console.log("[DIAG] setUsers effect: persisting", users.length, "users to localStorage");
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
-    } catch {
-      /* ignore */
-    }
-  }, [users]);
+    return () => unsubscribe();
+  }, [currentUser?.uid]);
 
-  // Load persisted session email
-  useEffect(() => {
-    const storedEmail = window.localStorage.getItem(SESSION_KEY);
-    console.log("[DIAG] Session load effect: storedEmail from localStorage =", storedEmail);
-    setEmail(storedEmail);
-    setAuthReady(true);
-    console.log("[DIAG] Session load effect: setAuthReady(true)");
-  }, []);
-
-  const currentUser = useMemo(
-    () => {
-      const user = users.find((u) => u.email.toLowerCase() === (email ?? "").toLowerCase()) ?? null;
-      console.log("[DIAG] currentUser useMemo updated:", {
-        email,
-        foundUser: user ? { id: user.id, email: user.email, role: user.role } : null,
-      });
-      return user;
-    },
-    [users, email],
-  );
-
-  const signIn = useCallback<AccessState["signIn"]>(
-    (input, inputPin) => {
-      const found = users.find((u) => u.email.toLowerCase() === input.trim().toLowerCase());
-      if (!found) return { ok: false, reason: "not-found" as const };
-      if (found.status === "disabled") return { ok: false, reason: "disabled" as const };
-      if (found.pin !== inputPin) return { ok: false, reason: "invalid-pin" as const };
-      window.localStorage.setItem(SESSION_KEY, found.email);
-      setEmail(found.email);
-      return { ok: true };
-    },
-    [users],
-  );
-
-  const signOut = useCallback(() => {
+  const signOut = useCallback(async () => {
+    await firebaseSignOut(auth);
+    setCurrentUser(null);
     window.localStorage.removeItem(SESSION_KEY);
-    setEmail(null);
   }, []);
 
   const can = useCallback<AccessState["can"]>(
@@ -312,73 +335,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
     [currentUser],
   );
 
-  const invite = useCallback<AccessState["invite"]>(({ name, email, role }) => {
-    setUsers((prev) => [
-      ...prev,
-      {
-        id: `u-${Date.now()}`,
-        name: name || email.split("@")[0] || email,
-        email,
-        role,
-        status: "active",
-        permissions: rolePresets[role],
-        pin: generatePIN(),
-      },
-    ]);
-  }, []);
-
-  const togglePermission = useCallback<AccessState["togglePermission"]>((userId, key) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId
-          ? {
-              ...u,
-              permissions: u.permissions.includes(key)
-                ? u.permissions.filter((p) => p !== key)
-                : [...u.permissions, key],
-            }
-          : u,
-      ),
-    );
-  }, []);
-
-  const setRole = useCallback<AccessState["setRole"]>((userId, role) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, role, permissions: rolePresets[role] } : u)),
-    );
-  }, []);
-
-  const toggleStatus = useCallback<AccessState["toggleStatus"]>((userId) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId ? { ...u, status: u.status === "disabled" ? "active" : "disabled" } : u,
-      ),
-    );
-  }, []);
-
-  const remove = useCallback<AccessState["remove"]>((userId) => {
-    setUsers((prev) => prev.filter((u) => u.id !== userId));
-  }, []);
-
-  const changePIN = useCallback<AccessState["changePIN"]>((userId, newPin) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, pin: newPin } : u)),
-    );
-  }, []);
-
-  const resetPIN = useCallback<AccessState["resetPIN"]>((userId) => {
-    const newPin = generatePIN();
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, pin: newPin } : u)),
-    );
-    return newPin;
-  }, []);
-
-  const signInAsAdmin = useCallback<AccessState["signInAsAdmin"]>(async () => {
-    if (!adminEmail) {
-      return { ok: false, reason: "Admin email not configured. Set VITE_FIREBASE_ADMIN_EMAIL environment variable." };
-    }
-
+  const signInWithGoogle = useCallback<AccessState["signInWithGoogle"]>(async () => {
     const provider = new GoogleAuthProvider();
     provider.addScope("profile");
     provider.addScope("email");
@@ -388,60 +345,29 @@ export function AccessProvider({ children }: { children: ReactNode }) {
 
     try {
       const result = await signInWithPopup(auth, provider);
-
-      // Verify the Google account email matches configured admin email
-      if (result.user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
-        // Sign out the non-admin account
-        await firebaseSignOut(auth);
-        return { ok: false, reason: `Only ${adminEmail} can authenticate as admin. You signed in with ${result.user.email}` };
+      if (!result.user || !result.user.email) {
+        return { ok: false, reason: "No email returned from Google" };
       }
-
-      // Email matches admin - set session to trigger currentUser update
-      // onAuthStateChanged will also fire and create the admin user in the users list
-      window.localStorage.setItem(SESSION_KEY, result.user.email);
-      setEmail(result.user.email);
       return { ok: true };
     } catch (error: any) {
       if (error.code === "auth/popup-closed-by-user") {
-        return { ok: false, reason: "Google Sign-In was cancelled" };
+        console.warn("[ACCESS] Google sign-in cancelled by user");
+        return { ok: false, reason: "signin-cancelled" };
       }
-      return { ok: false, reason: error.message || "Failed to initiate Google Sign-In" };
+      console.error("[ACCESS] Google sign-in error:", error);
+      return { ok: false, reason: error.message || "Failed to sign in with Google" };
     }
-  }, [adminEmail]);
+  }, []);
 
   const value = useMemo<AccessState>(
     () => ({
-      users,
       currentUser,
       authReady,
-      signIn,
+      signInWithGoogle,
       signOut,
-      signInAsAdmin,
       can,
-      invite,
-      togglePermission,
-      setRole,
-      toggleStatus,
-      remove,
-      changePIN,
-      resetPIN,
     }),
-    [
-      users,
-      currentUser,
-      authReady,
-      signIn,
-      signOut,
-      signInAsAdmin,
-      can,
-      invite,
-      togglePermission,
-      setRole,
-      toggleStatus,
-      remove,
-      changePIN,
-      resetPIN,
-    ],
+    [currentUser, authReady, signInWithGoogle, signOut, can],
   );
 
   return <AccessContext.Provider value={value}>{children}</AccessContext.Provider>;

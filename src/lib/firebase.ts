@@ -1,6 +1,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getAuth, type Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { getFunctions, type Functions } from 'firebase/functions';
 
 // Firebase configuration from Vite environment variables
 const firebaseConfig = {
@@ -13,15 +14,15 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // Initialize Firestore
 export const db = getFirestore(app);
 
-// Firebase app singleton instance
-let firebaseApp: FirebaseApp = app;
+// Initialize Cloud Functions
+export const functions = getFunctions(app);
 
-// Firebase auth singleton instance
+// Initialize Firebase Auth
 let firebaseAuth: Auth | null = null;
 
 // Firebase persistence configuration state
@@ -57,4 +58,5 @@ export function getFirebaseAuth(): Auth {
 
 // Initialize Firebase Authentication via function to ensure persistence is configured
 export const auth = getFirebaseAuth();
+
 

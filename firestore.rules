@@ -2,29 +2,88 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Diary collection: 
-    // - Allows reads to all (for students/parents/teachers viewing diary)
-    // - Allows writes ONLY to the authenticated admin Google account
-    // 
-    // IMPORTANT: Update the email address below to match your VITE_FIREBASE_ADMIN_EMAIL
-    // Replace "YOUR_ADMIN_EMAIL_HERE" with your actual Google account email
-    match /diary/{diaryId} {
-      // All users can read diary (shared classroom information)
-      allow read: if true;
-      
-      // Only the authenticated admin Google account can write
-      // request.auth is set when user is authenticated with Firebase
-      // request.auth.token.email contains the authenticated user's email
-      // This email MUST match your VITE_FIREBASE_ADMIN_EMAIL configuration
-      allow write: if request.auth != null
-                   && request.auth.token.email == "rockyhsn9@gmail.com";
+    
+    // ========== HELPER FUNCTIONS ==========
+    
+    /**
+     * Check if user is authenticated
+     */
+    function isAuth() {
+      return request.auth != null;
     }
-
-    // Default deny all other collections
+    
+    /**
+     * Check if user's /users document exists and status is 'active'
+     * Uses get() to query /users document directly
+     */
+    function isUserActive() {
+      return isAuth() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+    
+    /**
+     * Get user's role from /users document
+     */
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    /**
+     * Check if user is admin (authenticated, active user with admin role)
+     * Queries /users document for role
+     */
+    function isAdmin() {
+      return isUserActive() && getUserRole() == 'admin';
+    }
+    
+    // ========== USERS COLLECTION ==========
+    // Users can read and write their own document, admins can read and write any document.
+    
+    match /users/{userId} {
+      allow read, write: if isAuth() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // ========== AUTHORIZED EMAILS COLLECTION ==========
+    // Authenticated users can read their own entry, admins can read and write all entries.
+    
+    match /authorizedEmails/{email} {
+      allow read: if request.auth != null && (request.auth.token.email.lower() == email.lower() || isAdmin());
+      allow write: if isAdmin();
+    }
+    
+    // ========== DIARY COLLECTION ==========
+    // Any authenticated user can read; only admin users can create, update, or delete.
+    
+    match /diary/{diaryId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // ========== EXAMS COLLECTION ==========
+    // Any authenticated user can read; only admin users can create, update, or delete.
+    
+    match /exams/{examId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // ========== SCHOOL PROFILE COLLECTION ==========
+    // Any authenticated user can read; only admin users can update.
+    
+    match /schoolProfile/{docId} {
+      allow read: if request.auth != null;
+      allow write: if isAuth() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        request.auth.token.email == 'rockyhsn9@gmail.com'
+      );
+    }
+    
+    // ========== DEFAULT DENY ==========
+    // All other collections: deny read and write
+    
     match /{document=**} {
       allow read, write: if false;
     }
   }
 }
-
-

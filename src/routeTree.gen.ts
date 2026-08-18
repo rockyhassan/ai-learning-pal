@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AchievementsRouteImport } from './routes/achievements'
 import { Route as AiMemoryRouteImport } from './routes/ai-memory'
 import { Route as AiTeacherRouteImport } from './routes/ai-teacher'
+import { Route as AuditRouteImport } from './routes/audit'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as GamesRouteImport } from './routes/games'
@@ -60,6 +61,11 @@ const AiMemoryRoute = AiMemoryRouteImport.update({
 const AiTeacherRoute = AiTeacherRouteImport.update({
   id: '/ai-teacher',
   path: '/ai-teacher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditRoute = AuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/achievements': typeof AchievementsRoute
   '/ai-memory': typeof AiMemoryRoute
   '/ai-teacher': typeof AiTeacherRoute
+  '/audit': typeof AuditRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
@@ -242,6 +249,7 @@ export interface FileRoutesByTo {
   '/achievements': typeof AchievementsRoute
   '/ai-memory': typeof AiMemoryRoute
   '/ai-teacher': typeof AiTeacherRoute
+  '/audit': typeof AuditRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/achievements': typeof AchievementsRoute
   '/ai-memory': typeof AiMemoryRoute
   '/ai-teacher': typeof AiTeacherRoute
+  '/audit': typeof AuditRoute
   '/dashboard': typeof DashboardRoute
   '/documents': typeof DocumentsRoute
   '/games': typeof GamesRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/ai-memory'
     | '/ai-teacher'
+    | '/audit'
     | '/dashboard'
     | '/documents'
     | '/games'
@@ -347,6 +357,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/ai-memory'
     | '/ai-teacher'
+    | '/audit'
     | '/dashboard'
     | '/documents'
     | '/games'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/ai-memory'
     | '/ai-teacher'
+    | '/audit'
     | '/dashboard'
     | '/documents'
     | '/games'
@@ -416,6 +428,7 @@ export interface RootRouteChildren {
   AchievementsRoute: typeof AchievementsRoute
   AiMemoryRoute: typeof AiMemoryRoute
   AiTeacherRoute: typeof AiTeacherRoute
+  AuditRoute: typeof AuditRoute
   DashboardRoute: typeof DashboardRoute
   DocumentsRoute: typeof DocumentsRoute
   GamesRoute: typeof GamesRoute
@@ -474,6 +487,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-teacher'
       fullPath: '/ai-teacher'
       preLoaderRoute: typeof AiTeacherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audit': {
+      id: '/audit'
+      path: '/audit'
+      fullPath: '/audit'
+      preLoaderRoute: typeof AuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -680,6 +700,7 @@ const rootRouteChildren: RootRouteChildren = {
   AchievementsRoute: AchievementsRoute,
   AiMemoryRoute: AiMemoryRoute,
   AiTeacherRoute: AiTeacherRoute,
+  AuditRoute: AuditRoute,
   DashboardRoute: DashboardRoute,
   DocumentsRoute: DocumentsRoute,
   GamesRoute: GamesRoute,

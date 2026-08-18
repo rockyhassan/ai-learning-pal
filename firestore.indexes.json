@@ -1,0 +1,49 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "email",
+          "order": "Ascending"
+        },
+        {
+          "fieldPath": "status",
+          "order": "Ascending"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "Ascending"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "diary",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "date",
+          "order": "Descending"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "exams",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "date",
+          "order": "Ascending"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

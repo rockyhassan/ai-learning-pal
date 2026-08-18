@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronRight, Send, Settings, ChevronDown } from "lucide-react";
+import { ChevronRight, Send, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { BottomNav, LangToggle, SettingsButton, SectionCard } from "@/components/app-shell";
+import { BottomNav, SectionCard } from "@/components/app-shell";
+import { DashboardHeader } from "@/components/dashboard-header";
 import { TodayRoutineCard } from "@/components/today-routine-card";
 import { useApp } from "@/lib/app-state";
 import { useAccess } from "@/lib/access-store";
@@ -43,8 +44,8 @@ const quickLinks = [
 
 function Dashboard() {
   const { t } = useApp();
-  const { can, currentUser } = useAccess();
-  const { routine, diary, exams } = useSchoolContent();
+  const { can } = useAccess();
+  const { diary, exams } = useSchoolContent();
   const [expandedOlderDates, setExpandedOlderDates] = useState<Set<string>>(new Set());
 
   const visibleLinks = quickLinks.filter((q) => {
@@ -52,19 +53,18 @@ function Dashboard() {
     const feature = featureForRoute(q.to);
     return !feature || can(feature);
   });
-  
+
   // Group all diary entries by date, sorted descending (newest first)
-  const diaryByDate = diary
+  const safeDiary = Array.isArray(diary) ? diary : [];
+  const diaryByDate = [...safeDiary]
     .sort((a, b) => {
-      // Handle undefined date fields safely
       if (!a.date && !b.date) return 0;
-      if (!a.date) return 1; // Entries without date sort to end
+      if (!a.date) return 1;
       if (!b.date) return -1;
-      // Both have dates: sort descending (newest first)
       return b.date.localeCompare(a.date);
     })
     .reduce((acc, entry) => {
-      if (!entry.date) return acc; // Skip entries without date
+      if (!entry.date) return acc;
       if (!acc[entry.date]) {
         acc[entry.date] = [];
       }
@@ -74,7 +74,6 @@ function Dashboard() {
 
   const sortedDates = Object.keys(diaryByDate).sort((a, b) => b.localeCompare(a));
 
-  // Toggle expand/collapse for an older date
   const toggleDateExpansion = (date: string) => {
     setExpandedOlderDates((prev) => {
       const next = new Set(prev);
@@ -87,34 +86,21 @@ function Dashboard() {
     });
   };
 
-  // Check if a date group should be expanded
   const isDateExpanded = (date: string): boolean => {
     const category = getDateCategory(date);
     if (category === "today" || category === "yesterday") {
-      return true; // Always expanded
+      return true;
     }
-    return expandedOlderDates.has(date); // Based on state
+    return expandedOlderDates.has(date);
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <header className="gradient-hero px-4 pb-8 pt-5 text-primary-foreground">
-        <div className="flex items-center gap-3">
-          <Link to="/profile" className="tap grid size-11 place-items-center rounded-2xl bg-primary-foreground/15 text-xl">
-            🦉
-          </Link>
-          <div className="flex-1">
-            <p className="text-xs opacity-80">{t("Good morning", "শুভ সকাল")}</p>
-            <p className="text-lg font-bold leading-tight">{currentUser?.name?.split(" ")[0] || "Wafi"}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <SettingsButton />
-            <LangToggle />
-          </div>
-        </div>
-      </header>
+    <div className="relative min-h-screen w-full bg-background pb-28">
+      {/* Sticky Header with curved bottom edge */}
+      <DashboardHeader />
 
-      <main className="-mt-4 animate-pop space-y-4 rounded-t-[2rem] bg-background px-4 pt-5">
+      {/* Scrollable Dashboard Content */}
+      <main className="-mt-4 mx-auto max-w-[800px] space-y-4 rounded-t-[2rem] bg-background px-4 pt-5 animate-pop">
         <SectionCard
           title={t("School Diary", "স্কুল ডায়েরি")}
           hint={
@@ -123,7 +109,7 @@ function Dashboard() {
             </Link>
           }
         >
-          {diary.length === 0 ? (
+          {safeDiary.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("No school diary available.", "কোন স্কুল ডায়েরি পাওয়া যায়নি।")}</p>
           ) : (
             <div className="space-y-4">
@@ -192,7 +178,7 @@ function Dashboard() {
 
         <SectionCard title={t("Exams", "পরীক্ষা")}>
           <ul className="space-y-2">
-            {exams.slice(0, 2).map((e) => {
+            {(exams || []).slice(0, 2).map((e) => {
               const daysRemaining = calculateDaysRemaining(e.date);
               return (
                 <li key={e.id} className="rounded-2xl bg-muted p-2">

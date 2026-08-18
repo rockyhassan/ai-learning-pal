@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firestore Audit - wafi-learning-buddy-new</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #1a73e8;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .collection-item {
+            background: #f9f9f9;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .document-item {
+            background: #fafafa;
+            margin: 10px 0 10px 20px;
+            padding: 10px;
+            border-radius: 3px;
+            border: 1px solid #e0e0e0;
+        }
+        .field-list {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .field-list li {
+            list-style: none;
+            margin: 5px 0;
+        }
+        button {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #1665d8;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .output {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .summary-table th, .summary-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .summary-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        .verified-user {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        .missing-user {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Firestore Database Audit</h1>
+        <p><strong>Project:</strong> wafi-learning-buddy-new</p>
+        <p><strong>Purpose:</strong> Read-only inspection of all collections and verified users</p>
+        
+        <hr>
+        
+        <h2>⚠️ Instructions</h2>
+        <p>This HTML file must be run in the browser while the app is open.</p>
+        <ol>
+            <li>Open the app: <code>https://localhost:5173</code> (or your dev server)</li>
+            <li>Open DevTools: Press <strong>F12</strong></li>
+            <li>Go to <strong>Console</strong> tab</li>
+            <li>Copy and paste the code from the "Script to Run in Console" section below</li>
+            <li>Press Enter and wait for results</li>
+        </ol>
+        
+        <hr>
+        
+        <h2>Script to Run in Console</h2>
+        <p>Copy the code below and paste it into the DevTools Console (F12):</p>
+        
+        <div class="output" id="script-to-copy">
+<pre>
+// FIRESTORE READ-ONLY AUDIT SCRIPT
+// Paste this into browser console (F12 → Console tab) while app is open
+
+(async function auditFirestore() {
+  console.log('\n' + '='.repeat(70));
+  console.log('FIRESTORE DATABASE AUDIT - READ-ONLY');
+  console.log('='.repeat(70) + '\n');
+
+  // Import Firebase functions
+  const { getFirestore, collection, getDocs, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.0.0/firestore.js');
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.0.0/app.js');
+
+  // Get the existing app and database
+  const db = getFirestore();
+
+  console.log('📋 STEP 1: List all top-level collections');
+  console.log('─'.repeat(70));
+  
+  try {
+    const collections = await db.listCollections();
+    console.log(`✅ Found ${collections.length} top-level collection(s):\n`);
+    
+    const collectionNames = [];
+    collections.forEach((col, i) => {
+      console.log(`  ${i + 1}. ${col.id}`);
+      collectionNames.push(col.id);
+    });
+    
+    console.log('\n' + '─'.repeat(70));
+    console.log('🔍 STEP 2: Check for /users collection');
+    console.log('─'.repeat(70) + '\n');
+    
+    if (collectionNames.includes('users')) {
+      console.log('✅ /users COLLECTION EXISTS\n');
+      
+      const usersSnap = await getDocs(collection(db, 'users'));
+      console.log(`   Documents in /users: ${usersSnap.docs.length}\n`);
+      
+      if (usersSnap.docs.length > 0) {
+        console.log('   Found documents:');
+        usersSnap.docs.forEach((doc, i) => {
+          const data = doc.data();
+          console.log(`\n   ${i + 1}. ${doc.id}`);
+          console.log(`      name: ${data.name || 'N/A'}`);
+          console.log(`      email: ${data.email || 'N/A'}`);
+          console.log(`      role: ${data.role || 'N/A'}`);
+          console.log(`      status: ${data.status || 'N/A'}`);
+          console.log(`      Fields: ${Object.keys(data).join(', ')}`);
+        });
+      } else {
+        console.log('   ⚠️  /users collection exists but is EMPTY');
+      }
+    } else {
+      console.log('❌ /users COLLECTION DOES NOT EXIST\n');
+      console.log('   The /users collection has not been created.');
+      console.log('   All verified users need to be migrated.\n');
+    }
+    
+    console.log('\n' + '─'.repeat(70));
+    console.log('📊 STEP 3: Other collections summary');
+    console.log('─'.repeat(70) + '\n');
+    
+    for (const collName of collectionNames) {
+      if (collName !== 'users') {
+        const collSnap = await getDocs(collection(db, collName));
+        console.log(`  • ${collName}: ${collSnap.docs.length} document(s)`);
+      }
+    }
+    
+    console.log('\n' + '═'.repeat(70));
+    console.log('AUDIT COMPLETE');
+    console.log('═'.repeat(70) + '\n');
+    
+  } catch (error) {
+    console.error('❌ AUDIT ERROR:', error.message);
+  }
+})();
+</pre>
+        </div>
+        
+        <hr>
+        
+        <h2>Expected Results</h2>
+        
+        <h3>If audit runs successfully, you will see:</h3>
+        
+        <div class="status success">
+            <strong>✅ Collections found:</strong> List of all top-level collections (should include "diary")
+        </div>
+        
+        <div class="status warning">
+            <strong>⚠️ Users collection status:</strong> Either EXISTS or DOES NOT EXIST
+        </div>
+        
+        <div class="status info">
+            <strong>ℹ️ Expected:</strong> If /users DOES NOT EXIST, all 4 verified users need migration
+        </div>
+        
+        <hr>
+        
+        <h2>Verified Users to Check</h2>
+        
+        <table class="summary-table">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Expected Doc ID</th>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>Rocky Hassan</td>
+                <td>rockyhsn9@gmail.com</td>
+                <td>admin</td>
+                <td>user_email_rockyhsn9@gmail.com</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Afreen</td>
+                <td>afreen.antora@gmail.com</td>
+                <td>parent</td>
+                <td>user_email_afreen.antora@gmail.com</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Wafi</td>
+                <td>affanwafee@gmail.com</td>
+                <td>student</td>
+                <td>user_email_affanwafee@gmail.com</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>Tahsin</td>
+                <td>tahsin@gmail.com</td>
+                <td>teacher</td>
+                <td>user_email_tahsin@gmail.com</td>
+            </tr>
+        </table>
+        
+        <hr>
+        
+        <h2>🔒 Important Notes</h2>
+        
+        <ul>
+            <li><strong>This is READ-ONLY:</strong> No data is created, modified, or deleted</li>
+            <li><strong>No code changes:</strong> Application code is not affected</li>
+            <li><strong>No deployments:</strong> Firestore rules or Cloud Functions are not deployed</li>
+            <li><strong>Console access:</strong> Requires browser to have access to Firestore (uses existing app authentication)</li>
+            <li><strong>Requires app to be open:</strong> Must run while the learning buddy app is loaded</li>
+        </ul>
+        
+        <hr>
+        
+        <h2>Next Steps</h2>
+        
+        <ol>
+            <li>Run the audit script (copy → paste into console)</li>
+            <li>Screenshot or copy the console output</li>
+            <li>Provide results below (or in a separate message)</li>
+            <li>I will analyze findings and create exact migration plan</li>
+        </ol>
+        
+        <hr>
+        
+        <div class="status info">
+            <strong>📝 Questions?</strong> See: VERIFIED_USER_MAPPING.md, FIREBASE_AUDIT_READONLY.js
+        </div>
+    </div>
+</body>
+</html>

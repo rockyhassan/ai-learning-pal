@@ -18,14 +18,14 @@ export const Route = createFileRoute("/student-setup")({
 });
 
 const fields = [
-  { id: "name", en: "Full Name", bn: "পূর্ণ নাম", ph: "Wafi Rahman" },
+  { id: "name", en: "Full Name", bn: "পূর্ণ নাম", ph: "Muhammad Affan Hassan Wafi" },
   { id: "nickname", en: "Nickname", bn: "ডাকনাম", ph: "Wafi" },
   { id: "birthday", en: "Birthday", bn: "জন্মদিন", ph: "12 April 2016", type: "date" },
-  { id: "class", en: "Class", bn: "শ্রেণি", ph: "Class 4" },
-  { id: "school", en: "School", bn: "স্কুল", ph: "Sunrise Model School" },
+  { id: "class", en: "Class", bn: "শ্রেণি", ph: "Grade-3" },
+  { id: "school", en: "School", bn: "স্কুল", ph: "KCIS" },
   { id: "board", en: "Board", bn: "বোর্ড", ph: "NCTB" },
   { id: "section", en: "Section", bn: "শাখা", ph: "A" },
-  { id: "roll", en: "Roll", bn: "রোল", ph: "07" },
+  { id: "roll", en: "Roll", bn: "রোল", ph: "08" },
 ];
 
 function StudentSetup() {

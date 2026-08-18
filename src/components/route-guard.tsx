@@ -1,8 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Lock, ShieldAlert } from "lucide-react";
-import type { ReactNode } from "react";
+import { Link, Navigate, useRouterState } from "@tanstack/react-router";
+import { Lock } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
+import { toast } from "sonner";
 import { useApp } from "@/lib/app-state";
-import { features, useAccess } from "@/lib/access-store";
+import { useAccess } from "@/lib/access-store";
 import { featureForRoute, isPublicRoute, isSessionOnlyRoute } from "@/lib/route-access";
 
 function Blocked({
@@ -31,30 +32,48 @@ function Blocked({
 export function RouteGuard({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { t } = useApp();
-  const { currentUser, authReady } = useAccess();
+  const { currentUser, authReady, signOut } = useAccess();
 
-  if (isPublicRoute(pathname)) return <>{children}</>;
+  const isPublic = isPublicRoute(pathname);
+  const isSessionOnly = isSessionOnlyRoute(pathname);
+  const feature = featureForRoute(pathname);
+  const isUnauthorized =
+    authReady &&
+    !!currentUser &&
+    currentUser.status !== "disabled" &&
+    !isPublic &&
+    !isSessionOnly &&
+    !!feature &&
+    !currentUser.permissions.includes(feature);
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      toast.error(
+        t(
+          "You do not have permission to access this page",
+          "আপনার এই পেজে প্রবেশের অনুমতি নেই",
+        ),
+      );
+    }
+  }, [isUnauthorized, pathname, t]);
+
+  // 1. Public & Loading States
+  if (isPublic) return <>{children}</>;
   if (!authReady) return <div className="min-h-screen bg-background" />;
 
-  if (!currentUser || currentUser.status === "disabled") {
+  // 2. Unauthenticated or Disabled State
+  if (!currentUser) {
     return (
       <Blocked
         icon={<Lock className="size-7" />}
         title={t("Sign in required", "সাইন ইন প্রয়োজন")}
-        message={
-          currentUser
-            ? t(
-                "This account has been disabled by the admin.",
-                "এই অ্যাকাউন্টটি অ্যাডমিন বন্ধ করে দিয়েছেন।",
-              )
-            : t(
-                "Please sign in with an approved email to open this page.",
-                "এই পেজটি খুলতে অনুমোদিত ইমেইল দিয়ে সাইন ইন করুন।",
-              )
-        }
+        message={t(
+          "Please sign in with an approved email to open this page.",
+          "এই পেজটি খুলতে অনুমোদিত ইমেইল দিয়ে সাইন ইন করুন।",
+        )}
         action={
           <Link
-            to="/login"
+            to="/"
             search={{ redirect: pathname }}
             className="tap block w-full rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
           >
@@ -65,30 +84,35 @@ export function RouteGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  const feature = featureForRoute(pathname);
-  if (isSessionOnlyRoute(pathname) || !feature) return <>{children}</>;
-
-  if (!currentUser.permissions.includes(feature)) {
-    const meta = features.find((f) => f.key === feature);
+  if (currentUser.status === "disabled") {
     return (
       <Blocked
-        icon={<ShieldAlert className="size-7" />}
-        title={t("No access", "অ্যাক্সেস নেই")}
+        icon={<Lock className="size-7" />}
+        title={t("Account disabled", "অ্যাকাউন্ট নিষ্ক্রিয়")}
         message={t(
-          `Your account (${currentUser.email}) doesn't have access to ${meta?.en ?? feature}. Ask an admin to enable it.`,
-          `আপনার অ্যাকাউন্টে (${currentUser.email}) ${meta?.bn ?? feature} এর অ্যাক্সেস নেই। অ্যাডমিনকে চালু করতে বলুন।`,
+          "This account has been disabled by the admin.",
+          "এই অ্যাকাউন্টটি অ্যাডমিন বন্ধ করে দিয়েছেন।",
         )}
         action={
-          <Link
-            to="/login"
-            search={{ redirect: "/login" }}
-            className="tap block w-full rounded-2xl bg-muted py-3 text-sm font-bold"
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="tap block w-full rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
           >
-            {t("Switch account", "অ্যাকাউন্ট বদলান")}
-          </Link>
+            {t("Sign out", "সাইন আউট")}
+          </button>
         }
       />
     );
+  }
+
+  // 3. Feature Permission & Fallback Redirection
+  if (isSessionOnly || !feature) return <>{children}</>;
+
+  if (!currentUser.permissions.includes(feature)) {
+    if (pathname !== "/dashboard") {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

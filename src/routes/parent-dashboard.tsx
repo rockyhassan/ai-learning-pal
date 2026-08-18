@@ -4,6 +4,7 @@ import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/app-state";
 import { student, subjects, teachers, weeklyProgress } from "@/lib/mock-data";
+import { useSchoolProfile } from "@/lib/school-profile";
 import { useSchoolContent, calculateDaysRemaining, formatDaysRemaining } from "@/lib/school-content";
 
 export const Route = createFileRoute("/parent-dashboard")({
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/parent-dashboard")({
 
 function ParentDashboard() {
   const { t } = useApp();
+  const { profile } = useSchoolProfile();
   const { exams } = useSchoolContent();
   const weekMinutes = weeklyProgress.reduce((sum, d) => sum + d.minutes, 0);
   const avgScore = Math.round(
@@ -36,7 +38,7 @@ function ParentDashboard() {
   return (
     <PageShell
       title={t("Parent Dashboard", "প্যারেন্ট ড্যাশবোর্ড")}
-      subtitle={t(`Guardian of ${student.name}`, `${student.name} এর অভিভাবক`)}
+      subtitle={t(`Guardian of ${profile.studentName}`, `${profile.studentName} এর অভিভাবক`)}
     >
       <SectionCard className="gradient-card">
         <div className="grid grid-cols-3 gap-2 text-center">

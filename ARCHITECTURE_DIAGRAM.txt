@@ -1,0 +1,329 @@
+================================================================================
+                       DIARY EDITOR ARCHITECTURE
+================================================================================
+
+BEFORE REFACTORING:
+───────────────────
+
+  RichTextEditor (monolithic)
+       ↓
+   Used only by:
+   ├─ Admin Diary (School Answer)
+   ├─ Diary Detail (School Answer)
+   └─ (not used by other fields)
+
+  Other Fields:
+  ├─ Classwork (cw)    → plain input
+  ├─ Homework (hw)     → plain input
+  ├─ Teacher's Answer  → plain textarea
+  ├─ Easy Answer       → plain textarea
+  └─ Bangla Explanation → plain textarea
+
+  Problem: Inconsistent experience, duplicated code patterns
+
+
+AFTER REFACTORING:
+──────────────────
+
+  DiaryContentEditor (reusable)
+          ↑
+          │ (re-exported as)
+          │
+  RichTextEditor (backward compat)
+          ↑
+          │ (imported by)
+          ├─────────────────────────────────────────┐
+          │                                         │
+   Admin Diary Page              Diary Detail Page
+   ├─ Classwork          ✅      ├─ School Answer  ✅
+   ├─ Homework           ✅      ├─ Teacher's Ans  ✅
+   ├─ School Answer      ✅      ├─ Easy Answer    ✅
+   └─                            └─ Bangla Expl    ✅
+
+  Solution: One component, six consistent fields
+
+
+COMPONENT HIERARCHY:
+────────────────────
+
+  DiaryContentEditor (PRIMARY)
+  ├─ Manages all editor state
+  ├─ Parse Text logic
+  ├─ Formatting controls
+  ├─ Undo/Redo history
+  ├─ Line management
+  └─ Data serialization (→ JSON)
+       ↓
+  RichTextEditor (LEGACY)
+  └─ Re-export DiaryContentEditor
+       ↓
+  Import in various pages:
+  ├─ src/routes/admin/diary.tsx
+  └─ src/routes/homework/diary.$diaryId.tsx
+
+
+DATA FLOW:
+──────────
+
+  ┌─────────────────────────────────────────────┐
+  │        User Input or Firestore Load          │
+  └────────────────┬────────────────────────────┘
+                   │
+                   ↓
+         ┌─────────────────────┐
+         │ Value prop received │
+         └────────┬────────────┘
+                  │
+        ┌─────────┴─────────┐
+        │                   │
+        ↓                   ↓
+    Is it        Is it
+    empty?       JSON?
+    │            │
+    ↓ YES        ↓ YES
+    │            │
+    │        parseRichText()
+    │            │
+    │            ↓ (parsed)
+    │            └──→ Set as content
+    │
+    ↓ NO         ↓ NO (or parse failed)
+    │            │
+    │        plainToRichText()
+    │            │
+    └────────────┴──→ Split by newline
+                     Create blocks
+                         │
+                         ↓
+         ┌───────────────────────────┐
+         │ RichTextContent (state)   │
+         ├─ blocks: TextBlock[]      │
+         │  ├─ type                  │
+         │  ├─ text                  │
+         │  ├─ align                 │
+         │  └─ marks                 │
+         └────────┬──────────────────┘
+                  │
+                  ↓ (on change)
+         ┌───────────────────────────┐
+         │ serializeRichText()       │
+         │ (convert to JSON string)  │
+         └────────┬──────────────────┘
+                  │
+                  ↓
+         ┌───────────────────────────┐
+         │ onChange(jsonString)      │
+         │ (emit to parent)          │
+         └────────┬──────────────────┘
+                  │
+                  ↓
+         ┌───────────────────────────┐
+         │ Parent State Updated      │
+         │ (form.fieldName = json)   │
+         └────────┬──────────────────┘
+                  │
+                  ↓ (on save)
+         ┌───────────────────────────┐
+         │ Firestore Document        │
+         │ {fieldName: jsonString}   │
+         └───────────────────────────┘
+
+
+PARSE TEXT FLOW:
+────────────────
+
+  User Action:
+  "Paste multi-line text"
+       │
+       ↓
+  parseInput (state)
+  "Line 1\nLine 2\nLine 3"
+       │
+       ↓
+  handleParseText()
+       │
+       ├─ Validate: not empty ✓
+       │
+       ├─ Call parseAnswerText(input)
+       │  ├─ split('\n')
+       │  ├─ map(trimEnd)
+       │  ├─ filter(line !== '')
+       │  └─ create blocks for each
+       │
+       ├─ updateHistory(parsedContent)
+       │  └─ Add to undo history
+       │
+       ├─ Clear parseInput
+       │
+       └─ Close Parse Text section
+              │
+              ↓
+      Editor shows parsed lines
+      ready for formatting
+
+
+FORMATTING FLOW (Per Line):
+───────────────────────────
+
+  User clicks Bold button:
+       │
+       ↓
+  handleToggleMark('bold')
+       │
+       ├─ Get selectedBlock
+       │
+       ├─ Call toggleMark(block, 'bold')
+       │  ├─ If 'bold' in marks: remove it
+       │  └─ Else: add it
+       │
+       ├─ Call updateBlock(content, index, updated)
+       │
+       ├─ updateHistory(newContent)
+       │  └─ Add to undo history
+       │
+       └─ useEffect onChange triggered
+              │
+              ↓
+          Serialize & emit
+          Parent updates
+          Firestore saves
+
+
+UNDO/REDO MECHANISM:
+────────────────────
+
+  State: history (RichTextContent[])
+  State: historyIndex (number)
+
+  ┌─ Initial: history = [defaultContent], index = 0
+  │
+  ├─ Edit 1 → history = [default, edit1], index = 1
+  │           (newHistory = history.slice(0, index+1) + [newContent])
+  │
+  ├─ Edit 2 → history = [default, edit1, edit2], index = 2
+  │
+  ├─ Click Undo
+  │  └─ index = 1
+  │     content = history[1] = edit1
+  │
+  ├─ Click Redo
+  │  └─ index = 2
+  │     content = history[2] = edit2
+  │
+  └─ If Undo then Edit 3
+     └─ history = [default, edit1, edit3]
+        (discards edit2 from branching)
+
+
+ADD/REMOVE LINE LOGIC:
+──────────────────────
+
+  Add Line (insert after current):
+       │
+       ├─ Create newBlock
+       │  {type: 'paragraph', text: '', align: 'left', marks: []}
+       │
+       ├─ Call addBlock(content, newBlock, selectedIndex+1)
+       │  └─ newBlocks.splice(selectedIndex+1, 0, newBlock)
+       │
+       ├─ Update selectedBlockIndex to new line
+       │
+       └─ New line ready for input
+
+
+  Remove Line (delete current):
+       │
+       ├─ Check: content.blocks.length > 1
+       │  └─ If no: disable button, don't delete
+       │
+       ├─ Call removeBlock(content, selectedIndex)
+       │  └─ Filter out current line
+       │
+       ├─ If was last line: selectedIndex--
+       │
+       └─ Removed, adjacent lines shift
+
+
+FILE STRUCTURE:
+───────────────
+
+  src/
+  ├─ components/
+  │  ├─ DiaryContentEditor.tsx      ← PRIMARY component
+  │  ├─ RichTextEditor.tsx          ← Re-export (backward compat)
+  │  └─ RichTextDisplay.tsx         ← Display only (unchanged)
+  │
+  ├─ lib/
+  │  └─ rich-text.ts               ← Utilities
+  │     ├─ parseAnswerText()        ← Parse multi-line text
+  │     ├─ parseRichText()          ← Parse JSON
+  │     ├─ plainToRichText()        ← Convert plain → blocks
+  │     ├─ serializeRichText()      ← Convert blocks → JSON
+  │     └─ (other utilities)
+  │
+  └─ routes/
+     ├─ admin/diary.tsx            ← Uses DiaryContentEditor
+     │  ├─ Import DiaryContentEditor
+     │  ├─ Classwork field
+     │  ├─ Homework field
+     │  └─ School Answer field
+     │
+     └─ homework/diary.$diaryId.tsx ← Uses DiaryContentEditor
+        ├─ Import DiaryContentEditor
+        ├─ School Answer field
+        ├─ Teacher's Answer field
+        ├─ Easy Answer field
+        └─ Bangla Explanation field
+
+
+BACKWARD COMPATIBILITY GUARANTEE:
+─────────────────────────────────
+
+  Old Data (Plain-text):
+  "Ex 2.5 page 26\nExercises done"
+       │
+       ↓ (Load in DiaryContentEditor)
+       │
+  plainToRichText()
+       │
+       ↓ (Blocks created)
+       │
+  ┌──────────────────────────────────┐
+  │ {blocks: [                        │
+  │   {text: "Ex 2.5 page 26", ...},  │
+  │   {text: "Exercises done", ...}   │
+  │ ]}                                │
+  └────────┬─────────────────────────┘
+           │
+           ↓ (User edits & saves)
+           │
+  serializeRichText() → JSON string
+           │
+           ↓ (Firestore)
+  
+  New Data (Rich-text JSON):
+  {"blocks":[{text:"Ex 2.5 page 26",marks:[],...},
+             {text:"Exercises done",marks:[],...}]}
+             
+  ✅ NO DATA LOSS
+  ✅ Formatting can now be applied
+  ✅ On display: auto-detected & rendered correctly
+
+
+CONSISTENCY MATRIX:
+───────────────────
+
+  Feature            CW    HW    Answer  TeachAns  EasyAns  BanglaExp
+  ───────────────────────────────────────────────────────────────────
+  Parse Text         ✅    ✅    ✅      ✅        ✅       ✅
+  Bold/Italic/Under  ✅    ✅    ✅      ✅        ✅       ✅
+  Alignment          ✅    ✅    ✅      ✅        ✅       ✅
+  Lists              ✅    ✅    ✅      ✅        ✅       ✅
+  Add/Remove Line    ✅    ✅    ✅      ✅        ✅       ✅
+  Undo/Redo          ✅    ✅    ✅      ✅        ✅       ✅
+  Line Height        ✅    ✅    ✅      ✅        ✅       ✅
+  Notebook Style     ✅    ✅    ✅      ✅        ✅       ✅
+
+  VERDICT: ✅ PERFECTLY CONSISTENT
+
+================================================================================

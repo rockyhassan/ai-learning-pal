@@ -3,6 +3,7 @@ import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { Progress } from "@/components/ui/progress";
 import { useApp } from "@/lib/app-state";
 import { achievements, student, subjects } from "@/lib/mock-data";
+import { useSchoolProfile } from "@/lib/school-profile";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -18,16 +19,18 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { t, lang } = useApp();
+  const { profile } = useSchoolProfile();
+
   return (
-    <PageShell title={t("Profile", "প্রোফাইল")} subtitle={student.school}>
+    <PageShell title={t("Profile", "প্রোফাইল")} subtitle={profile.schoolName}>
       <SectionCard className="gradient-card text-center">
         <div className="mx-auto grid size-20 place-items-center rounded-3xl gradient-sun text-4xl shadow-soft">🦉</div>
-        <h2 className="mt-3 text-lg font-extrabold">{student.name}</h2>
+        <h2 className="mt-3 text-lg font-extrabold">{profile.studentName}</h2>
         <p className="text-xs text-muted-foreground">
-          {student.className} · {t("Section", "শাখা")} {student.section} · {t("Roll", "রোল")} {student.roll}
+          {profile.grade} · {t("Section", "শাখা")} {profile.section} · {t("Roll", "রোল")} {profile.roll}
         </p>
-        <div className="mt-3 flex justify-center gap-2">
-          <Pill tone="primary">{student.board}</Pill>
+        <div className="mt-3 flex flex-wrap justify-center gap-2">
+          <Pill tone="primary">{profile.curriculum}</Pill>
           <Pill tone="accent">{student.medium}</Pill>
           <Pill tone="success">🔥 {student.streak}</Pill>
         </div>

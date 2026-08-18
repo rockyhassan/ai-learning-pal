@@ -52,7 +52,7 @@ function AiTeacher() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-background pb-28">
-      <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-40 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur shadow-sm">
         <span className="grid size-10 place-items-center rounded-2xl gradient-hero text-lg">🤖</span>
         <div className="flex-1">
           <h1 className="text-lg font-bold leading-tight">{t("AI Teacher", "এআই শিক্ষক")}</h1>

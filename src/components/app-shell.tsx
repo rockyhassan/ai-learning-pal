@@ -5,9 +5,11 @@ import {
   Calendar,
   Home,
   Languages,
+  Moon,
   NotebookPen,
   ScanLine,
   Settings,
+  Sun,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useApp } from "@/lib/app-state";
@@ -17,10 +19,10 @@ export function SettingsButton() {
   return (
     <Link
       to="/settings"
-      className="tap inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-soft"
+      className="tap inline-flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft transition-colors hover:bg-accent/40"
       aria-label="Settings"
     >
-      <Settings className="size-3.5" />
+      <Settings className="size-4" />
     </Link>
   );
 }
@@ -29,12 +31,28 @@ export function LangToggle() {
   const { lang, toggleLang } = useApp();
   return (
     <button
+      type="button"
       onClick={toggleLang}
       className="tap inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-soft"
       aria-label="Toggle language"
     >
       <Languages className="size-3.5" />
       {lang === "en" ? "EN" : "বাং"}
+    </button>
+  );
+}
+
+export function ThemeToggle() {
+  const { dark, setDark, t } = useApp();
+  return (
+    <button
+      type="button"
+      onClick={() => setDark(!dark)}
+      className="tap inline-flex items-center justify-center rounded-full border border-border bg-card p-1.5 text-foreground shadow-soft transition-colors hover:bg-accent/40"
+      aria-label={dark ? t("Switch to light mode", "লাইট মোড চালু করুন") : t("Switch to dark mode", "ডার্ক মোড চালু করুন")}
+      title={dark ? t("Light Mode", "লাইট মোড") : t("Dark Mode", "ডার্ক মোড")}
+    >
+      {dark ? <Sun className="size-3.5 text-amber-400" /> : <Moon className="size-3.5 text-slate-600" />}
     </button>
   );
 }
@@ -101,7 +119,7 @@ export function PageShell({
 }) {
   return (
     <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 px-4 py-3 backdrop-blur shadow-sm">
         <div className="flex items-center gap-3">
           {back ? (
             <Link

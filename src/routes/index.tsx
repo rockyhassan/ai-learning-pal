@@ -1,12 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Lock, ChevronRight, GraduationCap, BookOpen, Users } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
-import { LangToggle } from "@/components/app-shell";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LangToggle, ThemeToggle } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
-import { roleLabels, useAccess } from "@/lib/access-store";
-import { StudentAvatar, TeacherAvatar, ParentAvatar } from "@/components/login-avatars";
+import { useAccess } from "@/lib/access-store";
 
 type IndexSearch = { redirect?: string | undefined };
 
@@ -19,400 +16,240 @@ export const Route = createFileRoute("/")({
       { title: "Sign In — Wafi Learning" },
       {
         name: "description",
-        content:
-          "Sign in with the email your admin approved to open your parent, teacher, student or admin dashboard.",
+        content: "Sign in with Google to access your Wafi Learning Buddy dashboard.",
       },
       { property: "og:title", content: "Sign In — Wafi Learning" },
-      { property: "og:description", content: "Email-based sign in for Wafi." },
+      { property: "og:description", content: "Google Sign-In for Wafi Learning Companion." },
     ],
   }),
   component: HomePage,
 });
 
+function getPostLoginRedirect(redirect?: string): string {
+  if (redirect && redirect !== "/" && redirect !== "/login") {
+    return redirect;
+  }
+  return "/dashboard";
+}
+
 function HomePage() {
   const { t } = useApp();
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
-  const { users, signIn, currentUser, signOut, signInAsAdmin } = useAccess();
-  const [selectedRole, setSelectedRole] = useState<"student" | "teacher" | "parent" | null>(null);
-  const [pin, setPin] = useState("");
+  const { signInWithGoogle, currentUser, authReady } = useAccess();
   const [error, setError] = useState<string | null>(null);
-  const [isAdminSigningIn, setIsAdminSigningIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRoleSelect = (role: "student" | "teacher" | "parent") => {
-    setSelectedRole(role);
-    setPin("");
-    setError(null);
-  };
-
-  const handlePinSubmit = useCallback(() => {
-    if (!selectedRole || pin.length !== 4) return;
-
-    const user = users.find((u) => u.role === selectedRole && u.status === "active");
-
-    if (!user) {
-      setError(t("No account found for this role.", "এই ভূমিকার জন্য কোনো অ্যাকাউন্ট পাওয়া যায়নি।"));
-      return;
+  // Auto-redirect if already authenticated
+  useEffect(() => {
+    if (authReady && currentUser) {
+      if (currentUser.status === "disabled") {
+        setError(
+          t(
+            "Your account has been disabled. Please contact the administrator.",
+            "আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।"
+          )
+        );
+      } else {
+        const destination = getPostLoginRedirect(redirect);
+        navigate({ to: destination as "/" });
+      }
     }
+  }, [authReady, currentUser, redirect, navigate, t]);
 
-    const res = signIn(user.email, pin);
-    if (!res.ok) {
+  const handleSignIn = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await signInWithGoogle();
+      if (!result.ok) {
+        if (result.reason === "signin-cancelled") {
+          // User closed popup
+          setError(null);
+        } else if (result.reason === "email-not-authorized") {
+          setError(
+            t(
+              "Email not authorized. Please contact the administrator.",
+              "ইমেইল অনুমোদিত নয়। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।"
+            )
+          );
+        } else if (result.reason === "account-disabled") {
+          setError(
+            t(
+              "Your account has been disabled. Please contact the administrator.",
+              "আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।"
+            )
+          );
+        } else {
+          setError(
+            t(
+              "Sign in failed. Please try again.",
+              "সাইন ইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন।"
+            )
+          );
+        }
+      }
+    } catch {
       setError(
-        res.reason === "disabled"
-          ? t("This account is disabled.", "এই অ্যাকাউন্টটি বন্ধ আছে।")
-          : res.reason === "invalid-pin"
-            ? t("Incorrect PIN.", "ভুল পিন।")
-            : t("No access for this email. Ask the admin.", "এই ইমেইলের অ্যাক্সেস নেই। অ্যাডমিনকে বলুন।"),
+        t(
+          "An unexpected error occurred. Please try again.",
+          "একটি অপ্রত্যাশিত ত্রুটি ঘটেছে। আবার চেষ্টা করুন।"
+        )
       );
-      return;
-    }
-    setError(null);
-    navigate({ to: (redirect && redirect !== "/login" ? redirect : "/dashboard") as "/" });
-  }, [selectedRole, pin, users, signIn, t, redirect, navigate]);
-
-  const handleAdminSignIn = async () => {
-    setIsAdminSigningIn(true);
-    setError(null);
-    const result = await signInAsAdmin();
-    if (!result.ok) {
-      setError(result.reason || "Failed to sign in with Google.");
-      setIsAdminSigningIn(false);
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  // Keypad handlers
-  const handleKeypadNumber = (num: string) => {
-    if (pin.length < 4) {
-      const newPin = pin + num;
-      setPin(newPin);
-      setError(null);
-    }
-  };
-
-  const handleKeypadBackspace = () => {
-    setPin(pin.slice(0, -1));
-  };
-
-  const handleKeypadClear = () => {
-    setPin("");
-  };
-
-  // DIAGNOSTIC: Log role cards rendering
-  useEffect(() => {
-    if (!selectedRole) {
-      console.log("[DIAG] Role selection cards rendering:", {
-        availableRoles: (["student", "teacher", "parent"] as const)
-          .map((role) => {
-            const user = users.find((u) => u.role === role);
-            return user
-              ? {
-                  role,
-                  userId: user.id,
-                  name: user.name,
-                  email: user.email,
-                  status: user.status,
-                }
-              : null;
-          })
-          .filter(Boolean),
-      });
-    }
-  }, [users, selectedRole]);
-
-  // Auto-redirect to dashboard after Firebase redirect returns with admin user
-  useEffect(() => {
-    if (currentUser?.role === "admin") {
-      const timer = setTimeout(() => {
-        navigate({ to: (redirect && redirect !== "/login" ? redirect : "/dashboard") as "/" });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [currentUser, redirect, navigate]);
-
-  // Auto-submit PIN when 4 digits are entered
-  useEffect(() => {
-    if (selectedRole && pin.length === 4) {
-      // Use a small delay to ensure the state is fully updated
-      const timer = setTimeout(() => {
-        handlePinSubmit();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [pin, selectedRole, handlePinSubmit]);
 
   return (
-    <div className="relative flex min-h-screen flex-col justify-between overflow-hidden gradient-hero px-4 pt-6 pb-12 text-primary-foreground">
+    <main className="relative flex min-h-screen flex-col justify-between overflow-hidden bg-background px-4 py-6 text-foreground sm:px-6">
       {/* Background ambient lighting */}
-      <div className="pointer-events-none absolute -left-20 top-20 size-60 rounded-full bg-accent/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 size-64 rounded-full bg-success/15 blur-3xl" />
+      <div
+        className="pointer-events-none absolute -left-28 -top-28 size-80 rounded-full bg-primary/15 blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -right-28 top-1/3 size-80 rounded-full bg-accent/15 blur-3xl"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute bottom-0 left-1/4 size-72 rounded-full bg-secondary/20 blur-3xl"
+        aria-hidden="true"
+      />
 
-      {/* Top Header & Logo Section */}
-      <div className="w-full">
-        <div className="relative flex justify-between items-center mb-2 px-1">
-          <h1 className="text-2xl font-black tracking-tight">Wafi</h1>
+      {/* Top Header Controls */}
+      <header className="relative z-10 mx-auto flex w-full max-w-4xl items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl" role="img" aria-label="Wafi Owl">
+            🦉
+          </span>
+          <span className="font-display text-xl font-extrabold tracking-tight text-foreground">
+            Wafi
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LangToggle />
         </div>
+      </header>
 
-        {/* Mascot Logo */}
-        <div className="relative flex justify-center mb-3 mt-2">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-[2.2rem] gradient-sun opacity-60 blur-xl" />
-            <div className="relative grid size-24 place-items-center rounded-[2.2rem] gradient-sun shadow-lift ring-2 ring-primary-foreground/25">
-              <span className="text-5xl animate-float">🦉</span>
+      {/* Main Card Section */}
+      <section className="relative z-10 my-auto flex w-full flex-col items-center justify-center py-8">
+        <div className="w-full max-w-md space-y-6 rounded-3xl border border-border/80 bg-card/90 p-6 shadow-lift backdrop-blur-xl sm:p-8">
+          {/* Mascot Logo */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div
+                className="absolute inset-0 rounded-[2.2rem] gradient-sun opacity-50 blur-xl"
+                aria-hidden="true"
+              />
+              <div className="relative grid size-20 place-items-center rounded-[2.2rem] gradient-sun shadow-lift ring-2 ring-background/80">
+                <span className="animate-float text-4xl select-none" role="img" aria-label="Wafi Mascot">
+                  🦉
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Tagline */}
-        <p className="relative text-center text-sm sm:text-base font-semibold opacity-95 mb-6 tracking-tight">
-          {t("Your Child's AI Learning Companion", "আপনার সন্তানের এআই শেখার সঙ্গী")}
-        </p>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="relative flex-1 flex flex-col justify-center items-center py-2">
-        {!selectedRole ? (
-          <div className="w-full flex justify-center px-1">
-            {/* 3 Columns Grid inside max-w-lg with uniform borders */}
-            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 w-full items-stretch">
-              {(["student", "teacher", "parent"] as const).map((role, index) => {
-                const user = users.find((u) => u.role === role);
-                if (!user) return null;
-
-                const badgeConfig = {
-                  student: {
-                    bg: "bg-emerald-600/90 text-white",
-                    icon: <GraduationCap className="size-3.5 mr-1" />,
-                    label: t("Student", "শিক্ষার্থী"),
-                  },
-                  teacher: {
-                    bg: "bg-blue-600/90 text-white",
-                    icon: <BookOpen className="size-3.5 mr-1" />,
-                    label: t("Teacher", "শিক্ষক"),
-                  },
-                  parent: {
-                    bg: "bg-purple-600/90 text-white",
-                    icon: <Users className="size-3.5 mr-1" />,
-                    label: t("Parent", "অভিভাবক"),
-                  },
-                };
-
-                const badge = badgeConfig[role];
-
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => handleRoleSelect(role)}
-                    style={{
-                      animation: `pop-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both`,
-                      animationDelay: `${index * 60}ms`,
-                    }}
-                    className="tap group relative w-full rounded-2xl py-4 px-2 flex flex-col items-center justify-center text-white cursor-pointer transition-all duration-300 bg-white/10 backdrop-blur-md shadow-lg border border-white/20 hover:border-white/40 hover:bg-white/15"
-                  >
-                    {/* 1. Circular Avatar Container */}
-                    <div className="relative mb-2.5">
-                      <div className="size-16 rounded-full bg-sky-200/90 p-0.5 flex items-center justify-center overflow-hidden shadow-inner transition-transform duration-300 group-hover:scale-105">
-                        {role === "student" && <StudentAvatar />}
-                        {role === "teacher" && <TeacherAvatar />}
-                        {role === "parent" && <ParentAvatar />}
-                      </div>
-                    </div>
-
-                    {/* 2. User Name */}
-                    <h3 className="text-sm sm:text-base font-bold tracking-wide text-white mb-2 truncate w-full text-center">
-                      {user.name}
-                    </h3>
-
-                    {/* 3. Role Pill Badge */}
-                    <div
-                      className={`inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold shadow-sm ${badge.bg}`}
-                    >
-                      {badge.icon}
-                      <span>{badge.label}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+          {/* Title & Tagline */}
+          <div className="space-y-1.5 text-center">
+            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              {t("Welcome to Wafi", "ওয়াফিতে স্বাগতম")}
+            </h1>
+            <p className="text-sm font-medium text-muted-foreground">
+              {t(
+                "Your Child's AI Learning Companion",
+                "আপনার সন্তানের এআই শেখার সঙ্গী"
+              )}
+            </p>
           </div>
-        ) : (
-          /* PIN Entry Mode */
-          <div className="w-full max-w-xs mx-auto space-y-4">
+
+          <hr className="border-border/60" />
+
+          {/* Action Area */}
+          <div className="space-y-4">
+            <div className="space-y-1 text-center">
+              <h2 className="text-base font-bold text-foreground">
+                {t("Sign in to your account", "আপনার অ্যাকাউন্টে সাইন ইন করুন")}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "Use your authorized Google account to continue",
+                  "চালিয়ে যেতে আপনার অনুমোদিত গুগল অ্যাকাউন্ট ব্যবহার করুন"
+                )}
+              </p>
+            </div>
+
+            {/* Google Sign-In Button */}
             <button
               type="button"
-              onClick={() => setSelectedRole(null)}
-              className="tap text-xs font-semibold opacity-70 hover:opacity-100 transition-opacity duration-300 flex items-center gap-1 text-white mb-1"
+              onClick={handleSignIn}
+              disabled={isLoading || !authReady}
+              className="tap group relative flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm font-bold text-foreground shadow-soft transition-all duration-200 hover:bg-accent/40 hover:shadow-lift disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <span>←</span> {t("Back", "ফিরে যান")}
+              {isLoading ? (
+                <>
+                  <Loader2 className="size-5 animate-spin text-primary" />
+                  <span>{t("Signing in...", "সাইন ইন হচ্ছে...")}</span>
+                </>
+              ) : (
+                <>
+                  {/* Google Multicolor Logo */}
+                  <svg className="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17Z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24Z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27a7.2 7.2 0 0 1 0-4.54V6.58H1.25a11.98 11.98 0 0 0 0 10.84l4.03-3.15Z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"
+                    />
+                  </svg>
+                  <span>{t("Sign in with Google", "গুগল দিয়ে সাইন ইন করুন")}</span>
+                </>
+              )}
             </button>
 
-            {users
-              .filter((u) => u.role === selectedRole)
-              .map((user) => {
-                const roleInfo = roleLabels[selectedRole];
-                const roleColorMap = {
-                  student: "bg-emerald-600/90 text-white",
-                  teacher: "bg-blue-600/90 text-white",
-                  parent: "bg-purple-600/90 text-white",
-                };
+            {/* Error Message Display */}
+            {error && (
+              <div
+                role="alert"
+                className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/10 p-3.5 text-left text-xs font-semibold text-destructive animate-fade-in"
+              >
+                <AlertCircle className="size-4 shrink-0 mt-0.5 text-destructive" />
+                <span className="flex-1 leading-relaxed">{error}</span>
+              </div>
+            )}
 
-                return (
-                  <div
-                    key={user.id}
-                    className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-5 transition-all duration-300 shadow-xl"
-                    style={{
-                      animation: `pop-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both`,
-                    }}
-                  >
-                    <div className="text-center mb-4">
-                      <div className="flex justify-center mb-2">
-                        <div className="size-16 rounded-full bg-sky-200/90 p-0.5 flex items-center justify-center overflow-hidden shadow-inner">
-                          {selectedRole === "student" && <StudentAvatar />}
-                          {selectedRole === "teacher" && <TeacherAvatar />}
-                          {selectedRole === "parent" && <ParentAvatar />}
-                        </div>
-                      </div>
-
-                      <p className="font-bold text-lg leading-tight text-white mb-1">{user.name}</p>
-
-                      <div
-                        className={`inline-flex items-center gap-1 ${roleColorMap[selectedRole]} px-2.5 py-0.5 rounded-full text-[11px] font-semibold`}
-                      >
-                        <span>{roleInfo.emoji}</span>
-                        <span>{t(roleInfo.en, roleInfo.bn)}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div>
-                        <Label
-                          htmlFor="login-pin"
-                          className="text-[10px] font-bold uppercase opacity-80 tracking-wider text-white/90 block mb-1 text-center"
-                        >
-                          {t("Enter 4-digit PIN", "4-সংখ্যার PIN প্রবেশ করুন")}
-                        </Label>
-                        <Input
-                          id="login-pin"
-                          type="password"
-                          inputMode="none"
-                          value={pin}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                            setPin(value);
-                            setError(null);
-                          }}
-                          placeholder="••••"
-                          maxLength={4}
-                          className="w-full text-center text-2xl tracking-[0.4em] font-semibold bg-white/15 border border-white/20 hover:border-white/30 focus:border-white/40 transition-all duration-300 focus:ring-2 focus:ring-white/10 text-white placeholder-white/40 rounded-xl py-2"
-                        />
-                      </div>
-
-                      {/* Numeric Keypad */}
-                      <div className="pt-1">
-                        {/* Row 1: 1 2 3 */}
-                        <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-                          {["1", "2", "3"].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => handleKeypadNumber(num)}
-                              className="tap py-2.5 px-2 rounded-lg bg-white/12 border border-white/20 hover:bg-white/18 hover:border-white/30 transition-all duration-200 text-white font-semibold text-base shadow-sm"
-                            >
-                              {num}
-                            </button>
-                          ))}
-                        </div>
-                        {/* Row 2: 4 5 6 */}
-                        <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-                          {["4", "5", "6"].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => handleKeypadNumber(num)}
-                              className="tap py-2.5 px-2 rounded-lg bg-white/12 border border-white/20 hover:bg-white/18 hover:border-white/30 transition-all duration-200 text-white font-semibold text-base shadow-sm"
-                            >
-                              {num}
-                            </button>
-                          ))}
-                        </div>
-                        {/* Row 3: 7 8 9 */}
-                        <div className="grid grid-cols-3 gap-1.5 mb-1.5">
-                          {["7", "8", "9"].map((num) => (
-                            <button
-                              key={num}
-                              type="button"
-                              onClick={() => handleKeypadNumber(num)}
-                              className="tap py-2.5 px-2 rounded-lg bg-white/12 border border-white/20 hover:bg-white/18 hover:border-white/30 transition-all duration-200 text-white font-semibold text-base shadow-sm"
-                            >
-                              {num}
-                            </button>
-                          ))}
-                        </div>
-                        {/* Row 4: Clear 0 Backspace */}
-                        <div className="grid grid-cols-3 gap-1.5">
-                          <button
-                            type="button"
-                            onClick={handleKeypadClear}
-                            className="tap py-2.5 px-2 rounded-lg bg-red-500/20 border border-red-400/30 hover:bg-red-500/30 hover:border-red-400/50 transition-all duration-200 text-red-200 font-semibold text-xs shadow-sm"
-                          >
-                            {t("Clear", "মুছুন")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleKeypadNumber("0")}
-                            className="tap py-2.5 px-2 rounded-lg bg-white/12 border border-white/20 hover:bg-white/18 hover:border-white/30 transition-all duration-200 text-white font-semibold text-base shadow-sm"
-                          >
-                            0
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleKeypadBackspace}
-                            className="tap py-2.5 px-2 rounded-lg bg-white/12 border border-white/20 hover:bg-white/18 hover:border-white/30 transition-all duration-200 text-white font-semibold text-xs shadow-sm"
-                          >
-                            {t("←", "←")}
-                          </button>
-                        </div>
-                      </div>
-
-                      {error && (
-                        <p className="text-[11px] font-bold text-red-300 text-center animate-pop">{error}</p>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={handlePinSubmit}
-                        disabled={pin.length !== 4}
-                        className="tap hidden w-full flex items-center justify-center gap-1.5 rounded-full bg-black/25 border border-white/20 hover:bg-black/35 py-2 px-4 text-xs font-bold transition-all duration-300 disabled:opacity-40 text-white"
-                      >
-                        <Lock className="size-3" />
-                        <span>{t("Continue", "চালিয়ে যান")}</span>
-                        <ChevronRight className="size-3" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+            {/* Authorization Note */}
+            <div className="flex items-start gap-2 rounded-2xl border border-border/50 bg-muted/40 p-3 text-left">
+              <ShieldCheck className="size-4 shrink-0 text-primary mt-0.5" />
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {t(
+                  "Only authorized school and guardian accounts can access this platform. Contact your administrator if you need access.",
+                  "শুধুমাত্র অনুমোদিত স্কুল ও অভিভাবক অ্যাকাউন্ট এখানে প্রবেশ করতে পারবে। অ্যাক্সেসের জন্য আপনার অ্যাডমিনের সাথে যোগাযোগ করুন।"
+                )}
+              </p>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Admin Button */}
-      {!selectedRole && (
-        <div className="pt-2 flex justify-center">
-          <button
-            type="button"
-            onClick={handleAdminSignIn}
-            disabled={isAdminSigningIn}
-            className="tap group relative inline-flex items-center justify-center size-12 rounded-full border border-primary-foreground/25 bg-primary-foreground/12 backdrop-blur-md hover:bg-primary-foreground/18 hover:border-primary-foreground/35 hover:scale-105 transition-all duration-300 disabled:opacity-40 shadow-lg"
-            title={t("Admin Access", "অ্যাডমিন অ্যাক্সেস")}
-          >
-            <div className="absolute inset-0 rounded-full bg-primary-foreground/5 blur-sm group-hover:bg-primary-foreground/10 transition-colors duration-300" />
-            <Lock className="size-5 text-primary-foreground relative opacity-85 group-hover:opacity-100 transition-opacity" />
-          </button>
         </div>
-      )}
-    </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="relative z-10 mx-auto w-full max-w-4xl text-center text-xs text-muted-foreground">
+        <p>
+          © {new Date().getFullYear()} Wafi Learning. {t("All rights reserved.", "সর্বস্বত্ব সংরক্ষিত।")}
+        </p>
+      </footer>
+    </main>
   );
 }

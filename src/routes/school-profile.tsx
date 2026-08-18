@@ -37,7 +37,7 @@ function SchoolProfile() {
             <Label htmlFor="school-name" className="text-xs">
               {t("School Name", "স্কুলের নাম")}
             </Label>
-            <Input id="school-name" placeholder="Sunrise Model School" />
+            <Input id="school-name" placeholder="KCIS" />
           </div>
         </div>
       </SectionCard>
