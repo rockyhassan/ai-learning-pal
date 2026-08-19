@@ -1,6 +1,6 @@
 {
   "name": "Wafi Learning Buddy",
-  "short_name": "Wafi",
+  "short_name": "Wafi Learning Buddy",
   "description": "Wafi Learning Buddy Application",
   "start_url": "/",
   "display": "standalone",
@@ -11,13 +11,13 @@
       "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
