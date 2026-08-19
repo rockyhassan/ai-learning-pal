@@ -1,11 +1,11 @@
 {
   "name": "Wafi Learning Buddy",
-  "short_name": "Wafi Learning Buddy",
+  "short_name": "Wafi",
   "description": "Wafi Learning Buddy Application",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0284c7",
-  "theme_color": "#0284c7",
+  "background_color": "#38BDF8",
+  "theme_color": "#38BDF8",
   "icons": [
     {
       "src": "/icon-192x192.png",
