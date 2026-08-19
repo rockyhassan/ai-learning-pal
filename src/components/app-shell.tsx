@@ -120,8 +120,8 @@ export function PageShell({
   return (
     <div className="relative min-h-screen w-full bg-canvas pb-28">
       <header className="sticky top-0 z-40 w-full gradient-hero text-primary-foreground">
-        <div className="mx-auto flex max-w-[800px] items-center justify-between px-6 pt-5 pb-5">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="relative mx-auto flex max-w-[800px] items-center justify-between px-6 pt-5 pb-5">
+          <div className="relative z-10 flex items-center gap-3 min-w-0 flex-1">
             {back ? (
               <Link
                 to={back as "/"}
@@ -142,7 +142,17 @@ export function PageShell({
               ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+
+          {/* Centered Wafi Learning Buddy horizontal logo */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+            <img
+              src="/wafi-learning-buddy-header.png"
+              alt="Wafi Learning Buddy"
+              className="w-[125px] sm:w-[160px] md:w-[180px] h-auto max-h-10 object-contain drop-shadow-sm select-none"
+            />
+          </div>
+
+          <div className="relative z-10 flex items-center gap-2 shrink-0">
             {action ?? (
               <>
                 <SettingsButton />

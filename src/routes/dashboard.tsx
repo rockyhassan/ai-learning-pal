@@ -3,11 +3,18 @@ import { ChevronRight, Send, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { BottomNav, SectionCard } from "@/components/app-shell";
 import { DashboardHeader } from "@/components/dashboard-header";
+import { DiaryItemCard } from "@/components/diary-item-card";
 import { TodayRoutineCard } from "@/components/today-routine-card";
 import { useApp } from "@/lib/app-state";
 import { useAccess } from "@/lib/access-store";
 import { featureForRoute, isSessionOnlyRoute } from "@/lib/route-access";
-import { useSchoolContent, formatDiaryDate, calculateDaysRemaining, formatDaysRemaining, getDateCategory } from "@/lib/school-content";
+import {
+  useSchoolContent,
+  formatDiaryDate,
+  calculateDaysRemaining,
+  formatDaysRemaining,
+  getDateCategory,
+} from "@/lib/school-content";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -18,7 +25,10 @@ export const Route = createFileRoute("/dashboard")({
         content: "Today's homework, classes, exam countdown, goals and progress in one place.",
       },
       { property: "og:title", content: "Dashboard — Wafi Learning" },
-      { property: "og:description", content: "Homework, classes, exams and daily goals at a glance." },
+      {
+        property: "og:description",
+        content: "Homework, classes, exams and daily goals at a glance.",
+      },
     ],
   }),
   component: Dashboard,
@@ -63,14 +73,17 @@ function Dashboard() {
       if (!b.date) return -1;
       return b.date.localeCompare(a.date);
     })
-    .reduce((acc, entry) => {
-      if (!entry.date) return acc;
-      if (!acc[entry.date]) {
-        acc[entry.date] = [];
-      }
-      acc[entry.date].push(entry);
-      return acc;
-    }, {} as Record<string, typeof diary>);
+    .reduce(
+      (acc, entry) => {
+        if (!entry.date) return acc;
+        if (!acc[entry.date]) {
+          acc[entry.date] = [];
+        }
+        acc[entry.date].push(entry);
+        return acc;
+      },
+      {} as Record<string, typeof diary>,
+    );
 
   const sortedDates = Object.keys(diaryByDate).sort((a, b) => b.localeCompare(a));
 
@@ -104,13 +117,19 @@ function Dashboard() {
         <SectionCard
           title={t("School Diary", "স্কুল ডায়েরি")}
           hint={
-            <Link to="/homework" className="text-xs font-bold text-primary">
-              {t("All", "সব")}
+            <Link
+              to="/homework"
+              className="group inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100/70 px-3.5 py-1 text-xs font-bold text-indigo-600 shadow-[0_2px_8px_-2px_rgba(79,70,229,0.12)] hover:border-indigo-200 hover:shadow-indigo-500/15 active:scale-95 transition-all"
+            >
+              <span>{t("All", "সব")}</span>
+              <ChevronRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
           }
         >
           {safeDiary.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("No school diary available.", "কোন স্কুল ডায়েরি পাওয়া যায়নি।")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("No school diary available.", "কোন স্কুল ডায়েরি পাওয়া যায়নি।")}
+            </p>
           ) : (
             <div className="space-y-4">
               {sortedDates.map((date) => {
@@ -120,49 +139,29 @@ function Dashboard() {
                 return (
                   <div key={date}>
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className="text-xs font-bold text-muted-foreground">{formatDiaryDate(date)}</p>
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {formatDiaryDate(date)}
+                      </p>
                       {category === "older" && (
                         <button
                           onClick={() => toggleDateExpansion(date)}
-                          className="ml-auto tap flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                          className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-slate-50 hover:bg-indigo-50/70 border border-slate-200/80 hover:border-indigo-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 active:scale-95 shadow-[0_1px_3px_rgba(0,0,0,0.04)] transition-all"
                           aria-expanded={isExpanded}
                         >
                           <span>{isExpanded ? t("Hide", "লুকান") : t("Show", "দেখান")}</span>
                           <ChevronDown
-                            className="size-3.5 transition-transform duration-200"
-                            style={{
-                              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                            }}
+                            className={`size-3.5 transition-transform duration-200 ${
+                              isExpanded ? "rotate-180 text-indigo-600" : "text-slate-400"
+                            }`}
                           />
                         </button>
                       )}
                     </div>
                     {isExpanded && (
-                      <ul className="space-y-2 animate-in fade-in duration-200">
+                      <ul className="space-y-3 animate-in fade-in duration-200">
                         {diaryByDate[date].map((d) => (
                           <li key={d.id}>
-                            <Link
-                              to="/homework/diary/$diaryId"
-                              params={{ diaryId: d.id }}
-                              className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
-                            >
-                              <div className="flex-1">
-                                <p className="truncate text-sm font-semibold">{d.subject}</p>
-                                <div className="mt-1 space-y-0.5">
-                                  {d.cw && (
-                                    <p className="text-[11px] text-muted-foreground">
-                                      {t("C.W", "সি.ডব্লু")}: {d.cw}
-                                    </p>
-                                  )}
-                                  {d.hw && (
-                                    <p className="text-[11px] text-muted-foreground">
-                                      {t("H.W", "এইচ.ডব্লু")}: {d.hw}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <ChevronRight className="size-4 text-muted-foreground" />
-                            </Link>
+                            <DiaryItemCard entry={d} />
                           </li>
                         ))}
                       </ul>
@@ -177,7 +176,7 @@ function Dashboard() {
         <TodayRoutineCard />
 
         <SectionCard title={t("Exams", "পরীক্ষা")}>
-          {(!exams || exams.length === 0) ? (
+          {!exams || exams.length === 0 ? (
             <p className="text-xs text-muted-foreground">
               {t("No upcoming exams", "কোনো আসন্ন পরীক্ষা নেই")}
             </p>

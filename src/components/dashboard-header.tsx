@@ -5,6 +5,20 @@ import { useApp } from "@/lib/app-state";
 import { useAccess } from "@/lib/access-store";
 import { auth } from "@/lib/firebase";
 
+function getGreeting(t: (en: string, bn: string) => string): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return t("Good morning", "সুপ্রভাত");
+  }
+  if (hour >= 12 && hour < 17) {
+    return t("Good afternoon", "শুভ দুপুর");
+  }
+  if (hour >= 17 && hour < 21) {
+    return t("Good evening", "শুভ সন্ধ্যা");
+  }
+  return t("Good night", "শুভ রাত্রি");
+}
+
 export function DashboardHeader() {
   const { t } = useApp();
   const { currentUser } = useAccess();
@@ -40,7 +54,7 @@ export function DashboardHeader() {
             )}
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="text-xs opacity-80">{t("Good morning", "শুভ সকাল")}</p>
+            <p className="text-xs opacity-80">{getGreeting(t)}</p>
             <p className="truncate text-lg font-bold leading-tight tracking-tight text-primary-foreground">
               {displayName}
             </p>

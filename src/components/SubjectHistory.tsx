@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
-import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
-import { SectionCard, Pill } from "@/components/app-shell";
+import { SectionCard } from "@/components/app-shell";
+import { DiaryItemCard } from "@/components/diary-item-card";
 import { useApp } from "@/lib/app-state";
 import {
   type DiaryEntry,
@@ -83,31 +82,10 @@ export function SubjectHistory({ diary }: SubjectHistoryProps) {
               <p className="text-xs font-bold text-muted-foreground mb-2">
                 {formatDiaryDate(date)}
               </p>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {entriesByDate[date].map((d) => (
                   <li key={d.id}>
-                    <Link
-                      to="/homework/diary/$diaryId"
-                      params={{ diaryId: d.id }}
-                      className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
-                    >
-                      <div className="flex-1">
-                        <p className="truncate text-sm font-semibold">{d.subject}</p>
-                        <div className="mt-1 space-y-0.5">
-                          {d.cw && (
-                            <p className="text-[11px] text-muted-foreground">
-                              {t("C.W", "সি.ডব্লু")}: {d.cw}
-                            </p>
-                          )}
-                          {d.hw && (
-                            <p className="text-[11px] text-muted-foreground">
-                              {t("H.W", "এইচ.ডব্লু")}: {d.hw}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronRight className="size-4 text-muted-foreground" />
-                    </Link>
+                    <DiaryItemCard entry={d} />
                   </li>
                 ))}
               </ul>

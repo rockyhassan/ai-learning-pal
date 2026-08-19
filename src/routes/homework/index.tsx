@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
+import { DiaryItemCard } from "@/components/diary-item-card";
 import { useApp } from "@/lib/app-state";
 import { useSchoolContent, formatDiaryDate } from "@/lib/school-content";
 import { SubjectHistory } from "@/components/SubjectHistory";
@@ -27,8 +27,10 @@ function HomeworkList() {
   const { diary } = useSchoolContent();
   const [activeTab, setActiveTab] = useState<"school" | "subject">("school");
 
+  const safeDiary = Array.isArray(diary) ? diary : [];
+
   // Group all diary entries by date, sorted descending (newest first)
-  const diaryByDate = diary
+  const diaryByDate = [...safeDiary]
     .sort((a, b) => {
       // Handle undefined date fields safely
       if (!a.date && !b.date) return 0;
@@ -81,9 +83,9 @@ function HomeworkList() {
       {activeTab === "school" && (
         <SectionCard
           title={t("School Diary", "স্কুল ডায়েরি")}
-          hint={<Pill tone="primary">{diary.length}</Pill>}
+          hint={<Pill tone="primary">{safeDiary.length}</Pill>}
         >
-          {diary.length === 0 ? (
+          {safeDiary.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t("No diary entries for today.", "আজকের কোনো ডায়েরি এন্ট্রি নেই।")}
             </p>
@@ -94,31 +96,10 @@ function HomeworkList() {
                   <p className="text-xs font-bold text-muted-foreground mb-2">
                     {formatDiaryDate(date)}
                   </p>
-                  <ul className="space-y-2">
+                  <ul className="space-y-3">
                     {diaryByDate[date].map((d) => (
                       <li key={d.id}>
-                        <Link
-                          to="/homework/diary/$diaryId"
-                          params={{ diaryId: d.id }}
-                          className="tap flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5"
-                        >
-                          <div className="flex-1">
-                            <p className="truncate text-sm font-semibold">{d.subject}</p>
-                            <div className="mt-1 space-y-0.5">
-                              {d.cw && (
-                                <p className="text-[11px] text-muted-foreground">
-                                  {t("C.W", "সি.ডব্লু")}: {d.cw}
-                                </p>
-                              )}
-                              {d.hw && (
-                                <p className="text-[11px] text-muted-foreground">
-                                  {t("H.W", "এইচ.ডব্লু")}: {d.hw}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <ChevronRight className="size-4 text-muted-foreground" />
-                        </Link>
+                        <DiaryItemCard entry={d} />
                       </li>
                     ))}
                   </ul>

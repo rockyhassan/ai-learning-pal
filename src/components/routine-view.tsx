@@ -114,7 +114,7 @@ export function RoutineView({
   return (
     <div>
       {/* Weekday selector buttons */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2.5 -mx-1 px-1 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2.5 -mx-1 px-1 scrollbar-none">
         {weekdays.map((d) => {
           const isSelected = selectedDay === d.key;
           const isToday = d.key === currentDay;
@@ -122,14 +122,14 @@ export function RoutineView({
             <button
               key={d.key}
               onClick={() => handleDayChange(d.key)}
-              className={`tap shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all ${
+              className={`tap shrink-0 px-3.5 py-1.5 rounded-full text-[13px] transition-all ${
                 isSelected
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/40 text-muted-foreground hover:bg-muted"
-              } ${isToday && !isSelected ? "border border-primary/40 text-primary" : ""}`}
+                  ? "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/25 scale-[1.02]"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground font-semibold"
+              } ${isToday && !isSelected ? "border border-primary/40 text-primary bg-primary/5" : ""}`}
             >
               {d.key}
-              {isToday && <span className="ml-1 text-[8px]">•</span>}
+              {isToday && <span className="ml-1 text-[10px] leading-none">•</span>}
             </button>
           );
         })}
