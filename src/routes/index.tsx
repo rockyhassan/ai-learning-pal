@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
-import { LangToggle, ThemeToggle } from "@/components/app-shell";
+import { LangToggle } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
 import { useAccess } from "@/lib/access-store";
 
@@ -13,13 +13,13 @@ export const Route = createFileRoute("/")({
   }),
   head: () => ({
     meta: [
-      { title: "Sign In — Wafi Learning" },
+      { title: "Wafi — AI Learning Companion" },
       {
         name: "description",
-        content: "Sign in with Google to access your Wafi Learning Buddy dashboard.",
+        content: "Welcome to Wafi Learning Buddy - Your Child's AI Learning Companion.",
       },
-      { property: "og:title", content: "Sign In — Wafi Learning" },
-      { property: "og:description", content: "Google Sign-In for Wafi Learning Companion." },
+      { property: "og:title", content: "Wafi — AI Learning Companion" },
+      { property: "og:description", content: "Your Child's AI Learning Companion." },
     ],
   }),
   component: HomePage,
@@ -103,152 +103,97 @@ function HomePage() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col justify-between overflow-hidden bg-background px-4 py-6 text-foreground sm:px-6">
-      {/* Background ambient lighting */}
+    <main className="relative flex min-h-[100dvh] w-full flex-col justify-between overflow-x-hidden bg-[#F3F8FF] px-4 py-4 sm:px-6 sm:py-6 text-foreground selection:bg-indigo-100">
+      {/* Soft pastel ambient background glows */}
       <div
-        className="pointer-events-none absolute -left-28 -top-28 size-80 rounded-full bg-primary/15 blur-3xl"
+        className="pointer-events-none absolute -top-24 -left-20 size-80 rounded-full bg-blue-200/40 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -right-28 top-1/3 size-80 rounded-full bg-accent/15 blur-3xl"
+        className="pointer-events-none absolute top-1/4 -right-20 size-96 rounded-full bg-indigo-200/35 blur-3xl"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute bottom-0 left-1/4 size-72 rounded-full bg-secondary/20 blur-3xl"
+        className="pointer-events-none absolute bottom-0 left-1/3 size-80 rounded-full bg-purple-200/30 blur-3xl"
         aria-hidden="true"
       />
 
-      {/* Top Header Controls */}
-      <header className="relative z-10 mx-auto flex w-full max-w-4xl items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl" role="img" aria-label="Wafi Owl">
-            🦉
-          </span>
-          <span className="font-display text-xl font-extrabold tracking-tight text-foreground">
-            Wafi
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <LangToggle />
-        </div>
+      {/* Top Header - Minimal Language Selector */}
+      <header className="relative z-10 mx-auto flex w-full max-w-lg items-center justify-end">
+        <LangToggle />
       </header>
 
-      {/* Main Card Section */}
-      <section className="relative z-10 my-auto flex w-full flex-col items-center justify-center py-8">
-        <div className="w-full max-w-md space-y-6 rounded-3xl border border-border/80 bg-card/90 p-6 shadow-lift backdrop-blur-xl sm:p-8">
-          {/* Mascot Logo */}
-          <div className="flex justify-center">
-            <div className="relative">
-              <div
-                className="absolute inset-0 rounded-[2.2rem] gradient-sun opacity-50 blur-xl"
-                aria-hidden="true"
-              />
-              <div className="relative grid size-20 place-items-center rounded-[2.2rem] gradient-sun shadow-lift ring-2 ring-background/80">
-                <span className="animate-float text-4xl select-none" role="img" aria-label="Wafi Mascot">
-                  🦉
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Title & Tagline */}
-          <div className="space-y-1.5 text-center">
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-              {t("Welcome to Wafi", "ওয়াফিতে স্বাগতম")}
-            </h1>
-            <p className="text-sm font-medium text-muted-foreground">
-              {t(
-                "Your Child's AI Learning Companion",
-                "আপনার সন্তানের এআই শেখার সঙ্গী"
-              )}
-            </p>
-          </div>
-
-          <hr className="border-border/60" />
-
-          {/* Action Area */}
-          <div className="space-y-4">
-            <div className="space-y-1 text-center">
-              <h2 className="text-base font-bold text-foreground">
-                {t("Sign in to your account", "আপনার অ্যাকাউন্টে সাইন ইন করুন")}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  "Use your authorized Google account to continue",
-                  "চালিয়ে যেতে আপনার অনুমোদিত গুগল অ্যাকাউন্ট ব্যবহার করুন"
-                )}
-              </p>
-            </div>
-
-            {/* Google Sign-In Button */}
-            <button
-              type="button"
-              onClick={handleSignIn}
-              disabled={isLoading || !authReady}
-              className="tap group relative flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 text-sm font-bold text-foreground shadow-soft transition-all duration-200 hover:bg-accent/40 hover:shadow-lift disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="size-5 animate-spin text-primary" />
-                  <span>{t("Signing in...", "সাইন ইন হচ্ছে...")}</span>
-                </>
-              ) : (
-                <>
-                  {/* Google Multicolor Logo */}
-                  <svg className="size-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      fill="#4285F4"
-                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17Z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24Z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.28 14.27a7.2 7.2 0 0 1 0-4.54V6.58H1.25a11.98 11.98 0 0 0 0 10.84l4.03-3.15Z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"
-                    />
-                  </svg>
-                  <span>{t("Sign in with Google", "গুগল দিয়ে সাইন ইন করুন")}</span>
-                </>
-              )}
-            </button>
-
-            {/* Error Message Display */}
-            {error && (
-              <div
-                role="alert"
-                className="flex items-start gap-2.5 rounded-2xl border border-destructive/30 bg-destructive/10 p-3.5 text-left text-xs font-semibold text-destructive animate-fade-in"
-              >
-                <AlertCircle className="size-4 shrink-0 mt-0.5 text-destructive" />
-                <span className="flex-1 leading-relaxed">{error}</span>
-              </div>
-            )}
-
-            {/* Authorization Note */}
-            <div className="flex items-start gap-2 rounded-2xl border border-border/50 bg-muted/40 p-3 text-left">
-              <ShieldCheck className="size-4 shrink-0 text-primary mt-0.5" />
-              <p className="text-[11px] leading-relaxed text-muted-foreground">
-                {t(
-                  "Only authorized school and guardian accounts can access this platform. Contact your administrator if you need access.",
-                  "শুধুমাত্র অনুমোদিত স্কুল ও অভিভাবক অ্যাকাউন্ট এখানে প্রবেশ করতে পারবে। অ্যাক্সেসের জন্য আপনার অ্যাডমিনের সাথে যোগাযোগ করুন।"
-                )}
-              </p>
-            </div>
-          </div>
+      {/* Center Content: Logo, Branding, Heading & Start Button */}
+      <section className="relative z-10 my-auto flex w-full flex-col items-center justify-center text-center px-2 py-4 animate-pop">
+        {/* Wafi Learning Buddy Logo Image */}
+        <div className="relative flex items-center justify-center">
+          <div
+            className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-300/30 via-indigo-300/30 to-purple-300/30 blur-2xl transform scale-90"
+            aria-hidden="true"
+          />
+          <img
+            src="/icon-512x512.png"
+            alt="Wafi Learning Buddy"
+            className="relative w-[250px] sm:w-[350px] md:w-[430px] max-w-[85vw] h-auto object-contain select-none pointer-events-none drop-shadow-md animate-float"
+            loading="eager"
+          />
         </div>
+
+        {/* Title & Tagline */}
+        <div className="mt-4 sm:mt-6 space-y-1.5 sm:space-y-2">
+          <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800">
+            {t("Welcome to Wafi", "ওয়াফিতে স্বাগতম")}
+          </h1>
+          <p className="text-sm sm:text-base font-medium text-slate-600 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
+            {t(
+              "Your Child's AI Learning Companion",
+              "আপনার সন্তানের এআই শেখার সঙ্গী"
+            )}
+          </p>
+        </div>
+
+        {/* Action Button: Start ✨ */}
+        <div className="mt-6 sm:mt-8 w-full max-w-xs px-2">
+          <button
+            type="button"
+            onClick={handleSignIn}
+            disabled={isLoading || !authReady}
+            className="tap group relative flex h-14 sm:h-16 w-full items-center justify-center gap-2.5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-6 font-display text-lg sm:text-xl font-bold tracking-wide text-white shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-indigo-500/35 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-75 cursor-pointer"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="size-6 animate-spin text-white" />
+                <span>{t("Starting...", "শুরু হচ্ছে...")}</span>
+              </>
+            ) : (
+              <>
+                <span>{t("Start", "শুরু করো")}</span>
+                <Sparkles className="size-5 sm:size-6 text-amber-300 animate-pulse shrink-0" />
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Error Alert Display (if any) */}
+        {error && (
+          <div
+            role="alert"
+            className="mt-4 flex max-w-xs items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 px-3.5 py-2.5 text-xs font-semibold text-destructive animate-fade-in"
+          >
+            <AlertCircle className="size-4 shrink-0 text-destructive" />
+            <span className="flex-1 text-left leading-tight">{error}</span>
+          </div>
+        )}
       </section>
 
-      {/* Footer */}
-      <footer className="relative z-10 mx-auto w-full max-w-4xl text-center text-xs text-muted-foreground">
-        <p>
-          © {new Date().getFullYear()} Wafi Learning. {t("All rights reserved.", "সর্বস্বত্ব সংরক্ষিত।")}
-        </p>
+      {/* Footer - Subtle Safety Trust Message */}
+      <footer className="relative z-10 mx-auto flex w-full max-w-lg items-center justify-center pt-4 pb-2 text-center">
+        <div className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500/80">
+          <ShieldCheck className="size-3.5 text-indigo-500/70 shrink-0" />
+          <span>
+            {t("Safe. Secure. Made for Kids.", "নিরাপদ। নির্ভরযোগ্য। শিশুদের জন্য তৈরি।")}
+          </span>
+        </div>
       </footer>
     </main>
   );

@@ -1,7 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import { SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
-import { todayWeekday, type Weekday, useSchoolContent } from "@/lib/school-content";
+import { todayWeekday, actualSchoolWeekday, type Weekday, useSchoolContent } from "@/lib/school-content";
 import { RoutineView } from "@/components/routine-view";
 import { useState } from "react";
 
@@ -10,8 +10,8 @@ export function TodayRoutineCard() {
   const { routine } = useSchoolContent();
   const [selectedDay, setSelectedDay] = useState<Weekday>(todayWeekday());
 
-  const dayKeys: Weekday[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const currentDay = todayWeekday();
+  const dayKeys: Weekday[] = ["Sun", "Mon", "Tue", "Wed", "Thu"];
+  const currentDay = actualSchoolWeekday();
 
   const getDayLabel = (day: Weekday): string => {
     const labels: Record<Weekday, { en: string; bn: string }> = {
@@ -20,11 +20,9 @@ export function TodayRoutineCard() {
       Tue: { en: "Tuesday", bn: "মঙ্গলবার" },
       Wed: { en: "Wednesday", bn: "বুধবার" },
       Thu: { en: "Thursday", bn: "বৃহস্পতিবার" },
-      Fri: { en: "Friday", bn: "শুক্রবার" },
-      Sat: { en: "Saturday", bn: "শনিবার" },
     };
     const label = labels[day];
-    return t(label.en, label.bn);
+    return label ? t(label.en, label.bn) : "";
   };
 
   return (

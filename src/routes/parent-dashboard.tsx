@@ -72,20 +72,26 @@ function ParentDashboard() {
       </SectionCard>
 
       <SectionCard title={t("Upcoming exams", "আসন্ন পরীক্ষা")}>
-        <ul className="space-y-2">
-          {exams.map((e) => {
-            const daysRemaining = calculateDaysRemaining(e.date);
-            return (
-              <li key={e.id} className="rounded-2xl bg-muted p-3">
-                <p className="text-sm font-bold leading-tight">{e.name}</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{e.chapter}</p>
-                <p className="mt-1 text-sm font-extrabold text-destructive">
-                  {formatDaysRemaining(daysRemaining)}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
+        {(!exams || exams.length === 0) ? (
+          <p className="text-xs text-muted-foreground">
+            {t("No upcoming exams", "কোনো আসন্ন পরীক্ষা নেই")}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {exams.map((e) => {
+              const daysRemaining = calculateDaysRemaining(e.date);
+              return (
+                <li key={e.id} className="rounded-2xl bg-muted p-3">
+                  <p className="text-sm font-bold leading-tight">{e.name}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{e.chapter}</p>
+                  <p className="mt-1 text-sm font-extrabold text-destructive">
+                    {formatDaysRemaining(daysRemaining)}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </SectionCard>
 
       <SectionCard title={t("Teachers", "শিক্ষকগণ")}>

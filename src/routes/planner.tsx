@@ -26,22 +26,28 @@ function Planner() {
       </SectionCard>
 
       <SectionCard title={t("Exams", "পরীক্ষা")}>
-        <ul className="space-y-2">
-          {exams.map((e) => {
-            const daysRemaining = calculateDaysRemaining(e.date);
-            return (
-              <li key={e.id} className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">{e.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{e.chapter}</p>
-                </div>
-                <Pill tone={daysRemaining < 0 ? "muted" : daysRemaining <= 3 ? "destructive" : "primary"}>
-                  {Math.abs(daysRemaining)}d
-                </Pill>
-              </li>
-            );
-          })}
-        </ul>
+        {exams.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {t("No upcoming exams", "কোনো আসন্ন পরীক্ষা নেই")}
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {exams.map((e) => {
+              const daysRemaining = calculateDaysRemaining(e.date);
+              return (
+                <li key={e.id} className="flex items-center gap-3 rounded-2xl bg-muted px-3 py-2.5">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">{e.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{e.chapter}</p>
+                  </div>
+                  <Pill tone={daysRemaining < 0 ? "muted" : daysRemaining <= 3 ? "destructive" : "primary"}>
+                    {Math.abs(daysRemaining)}d
+                  </Pill>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </SectionCard>
 
       <div className="grid grid-cols-2 gap-3">

@@ -118,28 +118,50 @@ export function PageShell({
   hideNav?: boolean;
 }) {
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 px-4 py-3 backdrop-blur shadow-sm">
-        <div className="flex items-center gap-3">
-          {back ? (
-            <Link
-              to={back as "/"}
-              className="tap grid size-9 shrink-0 place-items-center rounded-full border border-border bg-card"
-              aria-label="Back"
-            >
-              <ArrowLeft className="size-4" />
-            </Link>
-          ) : null}
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold leading-tight">{title}</h1>
-            {subtitle ? (
-              <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+    <div className="relative min-h-screen w-full bg-canvas pb-28">
+      <header className="sticky top-0 z-40 w-full gradient-hero text-primary-foreground">
+        <div className="mx-auto flex max-w-[800px] items-center justify-between px-6 pt-5 pb-5">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {back ? (
+              <Link
+                to={back as "/"}
+                className="tap grid size-11 shrink-0 place-items-center rounded-2xl bg-primary-foreground/15 text-primary-foreground backdrop-blur-sm shadow-sm transition-colors hover:bg-primary-foreground/25"
+                aria-label="Back"
+              >
+                <ArrowLeft className="size-5" />
+              </Link>
             ) : null}
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-lg font-bold leading-tight tracking-tight text-primary-foreground">
+                {title}
+              </h1>
+              {subtitle ? (
+                <p className="truncate text-xs text-primary-foreground/80 font-medium">
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
           </div>
-          {action ?? <LangToggle />}
+          <div className="flex items-center gap-2 shrink-0">
+            {action ?? (
+              <>
+                <SettingsButton />
+                <LangToggle />
+              </>
+            )}
+          </div>
+        </div>
+        {/* Curved background cutout attached to header bottom */}
+        <div className="mx-auto h-6 max-w-[800px] rounded-t-[2rem] bg-canvas" />
+
+        {/* Smooth subtle gradient fade below the curved header for scrolling content */}
+        <div className="pointer-events-none absolute top-full left-0 right-0 h-4 overflow-hidden">
+          <div className="mx-auto h-full max-w-[800px] bg-gradient-to-b from-canvas/80 via-canvas/40 to-transparent" />
         </div>
       </header>
-      <main className="animate-pop space-y-4 px-4 py-4">{children}</main>
+      <main className="-mt-4 mx-auto max-w-[800px] space-y-4 rounded-t-[2rem] bg-canvas px-4 pt-8 animate-pop">
+        {children}
+      </main>
       {hideNav ? null : <BottomNav />}
     </div>
   );

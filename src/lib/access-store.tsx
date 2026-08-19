@@ -124,6 +124,7 @@ export type AccessUser = {
   uid: string;
   name: string;
   email: string;
+  photoURL?: string | null;
   role: Role;
   status: "active" | "invited" | "disabled";
   permissions: FeatureKey[];
@@ -225,6 +226,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
           }
 
           const name = firebaseUser.displayName || normalizedEmail.split("@")[0] || "User";
+          const photoURL = firebaseUser.photoURL || null;
 
           // 3. Update/Merge the user's document in /users/{firebaseUser.uid}
           await setDoc(
@@ -233,6 +235,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
               uid: firebaseUser.uid,
               email: normalizedEmail,
               name,
+              photoURL,
               role: resolvedRole,
               permissions: resolvedPermissions,
               status: resolvedStatus,
@@ -246,6 +249,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
             uid: firebaseUser.uid,
             email: normalizedEmail,
             name,
+            photoURL,
             role: resolvedRole,
             status: resolvedStatus,
             permissions: resolvedPermissions,
@@ -295,12 +299,14 @@ export function AccessProvider({ children }: { children: ReactNode }) {
           const updatedPermissions: FeatureKey[] = Array.isArray(userData.permissions)
             ? (userData.permissions as FeatureKey[])
             : rolePresets[updatedRole] || [];
+          const updatedPhotoURL = userData.photoURL ?? auth.currentUser?.photoURL ?? currentUser.photoURL ?? null;
 
           setCurrentUser((prev) =>
             prev
               ? {
                   ...prev,
                   name: userData.name || prev.name,
+                  photoURL: updatedPhotoURL,
                   role: updatedRole,
                   status: updatedStatus,
                   permissions: updatedPermissions,

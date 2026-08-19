@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Calendar, Clock, Sparkles } from "lucide-react";
 import { useApp } from "@/lib/app-state";
 import {
+  actualSchoolWeekday,
   sortRoutine,
   todayWeekday,
   weekdays,
@@ -75,7 +76,7 @@ export function RoutineView({
     initialDay || todayWeekday()
   );
 
-  const currentDay = todayWeekday();
+  const currentDay = actualSchoolWeekday();
   const dayRoutine = sortRoutine(routine.filter((r) => r.day === selectedDay));
 
   const handleDayChange = (day: Weekday) => {
@@ -103,16 +104,9 @@ export function RoutineView({
         short: "Thu",
         shortBn: "বৃহঃ",
       },
-      Fri: { en: "Friday", bn: "শুক্রবার", short: "Fri", shortBn: "শুক্র" },
-      Sat: {
-        en: "Saturday",
-        bn: "শনিবার",
-        short: "Sat",
-        shortBn: "শনি",
-      },
     };
     const label = labels[day];
-    return lang === "bn" ? label.bn : label.en;
+    return label ? (lang === "bn" ? label.bn : label.en) : "";
   };
 
   let academicPeriodCounter = 0;

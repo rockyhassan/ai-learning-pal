@@ -95,12 +95,12 @@ function Dashboard() {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-background pb-28">
+    <div className="relative min-h-screen w-full bg-canvas pb-28">
       {/* Sticky Header with curved bottom edge */}
       <DashboardHeader />
 
       {/* Scrollable Dashboard Content */}
-      <main className="-mt-4 mx-auto max-w-[800px] space-y-4 rounded-t-[2rem] bg-background px-4 pt-5 animate-pop">
+      <main className="-mt-4 mx-auto max-w-[800px] space-y-4 rounded-t-[2rem] bg-canvas px-4 pt-8 animate-pop">
         <SectionCard
           title={t("School Diary", "স্কুল ডায়েরি")}
           hint={
@@ -177,20 +177,26 @@ function Dashboard() {
         <TodayRoutineCard />
 
         <SectionCard title={t("Exams", "পরীক্ষা")}>
-          <ul className="space-y-2">
-            {(exams || []).slice(0, 2).map((e) => {
-              const daysRemaining = calculateDaysRemaining(e.date);
-              return (
-                <li key={e.id} className="rounded-2xl bg-muted p-2">
-                  <p className="text-xs font-bold leading-tight">{e.name}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{e.chapter}</p>
-                  <p className="mt-1 text-sm font-extrabold text-destructive">
-                    {formatDaysRemaining(daysRemaining)}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
+          {(!exams || exams.length === 0) ? (
+            <p className="text-xs text-muted-foreground">
+              {t("No upcoming exams", "কোনো আসন্ন পরীক্ষা নেই")}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {exams.slice(0, 2).map((e) => {
+                const daysRemaining = calculateDaysRemaining(e.date);
+                return (
+                  <li key={e.id} className="rounded-2xl bg-muted p-2">
+                    <p className="text-xs font-bold leading-tight">{e.name}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">{e.chapter}</p>
+                    <p className="mt-1 text-sm font-extrabold text-destructive">
+                      {formatDaysRemaining(daysRemaining)}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </SectionCard>
 
         <SectionCard title={t("AI Teacher", "এআই শিক্ষক")}>

@@ -57,7 +57,7 @@ export type ExamEntry = {
   description?: string;
 };
 
-export type Weekday = "Sun" | "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat";
+export type Weekday = "Sun" | "Mon" | "Tue" | "Wed" | "Thu";
 
 export const weekdays: { key: Weekday; en: string; bn: string }[] = [
   { key: "Sun", en: "Sun", bn: "রবি" },
@@ -65,8 +65,6 @@ export const weekdays: { key: Weekday; en: string; bn: string }[] = [
   { key: "Tue", en: "Tue", bn: "মঙ্গল" },
   { key: "Wed", en: "Wed", bn: "বুধ" },
   { key: "Thu", en: "Thu", bn: "বৃহঃ" },
-  { key: "Fri", en: "Fri", bn: "শুক্র" },
-  { key: "Sat", en: "Sat", bn: "শনি" },
 ];
 
 export function todayKey() {
@@ -74,8 +72,23 @@ export function todayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+/**
+ * Returns current school weekday (Sun–Thu).
+ * If today is a weekend/non-school day (Fri or Sat), automatically falls back to Sun.
+ */
 export function todayWeekday(): Weekday {
-  return (["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as Weekday[])[new Date().getDay()];
+  const dayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
+  const days: Weekday[] = ["Sun", "Mon", "Tue", "Wed", "Thu"];
+  return dayIndex >= 0 && dayIndex <= 4 ? days[dayIndex] : "Sun";
+}
+
+/**
+ * Returns current school weekday if today is Sun–Thu, or null if today is Fri/Sat.
+ */
+export function actualSchoolWeekday(): Weekday | null {
+  const dayIndex = new Date().getDay();
+  const days: Weekday[] = ["Sun", "Mon", "Tue", "Wed", "Thu"];
+  return dayIndex >= 0 && dayIndex <= 4 ? days[dayIndex] : null;
 }
 
 /** Format a date string (YYYY-MM-DD) as "Today", "Yesterday", or full formatted date with day of week. */
@@ -183,48 +196,7 @@ export function getDateCategory(dateStr: string): "today" | "yesterday" | "older
   }
 }
 
-const seedDiary: DiaryEntry[] = [
-  {
-    id: "d-1",
-    date: todayKey(),
-    subject: "English Language",
-    cw: "Grammar Builder 1 Unit 5.1, pg- 45, Ex- E done in the class.",
-    hw: "N/A",
-    answer: "",
-  },
-  {
-    id: "d-2",
-    date: todayKey(),
-    subject: "Maths",
-    cw: "Helium- Success book. Ex- 2.5. Pg- 26 / Neon- ICT class taken",
-    hw: "Helium- Success book. Ex- 2.5. Pg- 26 (5,6)",
-    answer: "",
-  },
-  {
-    id: "d-3",
-    date: todayKey(),
-    subject: "Computer Science",
-    cw: "Chapter-1, book page: 8-9, exercises done.",
-    hw: "Practice them at home again.",
-    answer: "",
-  },
-  {
-    id: "d-4",
-    date: todayKey(),
-    subject: "Science",
-    cw: "SS chapter: 1,2 Question-Answer and F/B was done.",
-    hw: "Revise previous topics.",
-    answer: "",
-  },
-  {
-    id: "d-5",
-    date: todayKey(),
-    subject: "Bangla 2nd Paper",
-    cw: "ধ্বনি ও ধ্বনির প্রকারভেদ অনুশীলনীর প্রশ্নের উত্তর লিখানো হয়েছে।",
-    hw: "বাড়িতে অনুশীলন করবে।",
-    answer: "",
-  },
-];
+const seedDiary: DiaryEntry[] = [];
 
 const seedRoutine: RoutineEntry[] = [
   {
@@ -288,33 +260,7 @@ const seedRoutine: RoutineEntry[] = [
   },
 ];
 
-// Calculate exam dates for seed data: 3 days, 11 days, 18 days from today
-function getExamDateFromDaysOffset(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-const seedExams: ExamEntry[] = [
-  {
-    id: "ex-1",
-    name: "Math Class Test",
-    date: getExamDateFromDaysOffset(3),
-    chapter: "Chapter 3: Fractions",
-  },
-  {
-    id: "ex-2",
-    name: "English Mid Term",
-    date: getExamDateFromDaysOffset(11),
-    chapter: "Chapter 1-3",
-  },
-  {
-    id: "ex-3",
-    name: "Science Quiz",
-    date: getExamDateFromDaysOffset(18),
-    chapter: "Living Things",
-  },
-];
+const seedExams: ExamEntry[] = [];
 
 /**
  * Recognize C.W and H.W field labels (case-insensitive):
@@ -463,7 +409,7 @@ const KEY = "wafi.school-content";
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function SchoolContentProvider({ children }: { children: ReactNode }) {
-  const [diary, setDiary] = useState<DiaryEntry[]>(seedDiary);
+  const [diary, setDiary] = useState<DiaryEntry[]>([]);
   const [routine, setRoutine] = useState<RoutineEntry[]>(seedRoutine);
   const [exams, setExams] = useState<ExamEntry[]>(seedExams);
   const [firestoreReady, setFirestoreReady] = useState(false);
@@ -472,7 +418,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
   const { currentUser } = useAccess();
   const isAdmin = currentUser?.role === "admin";
 
-  // Load from localStorage on mount
+  // Load routine and exams from localStorage on mount (diary is strictly Firestore-only)
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -482,23 +428,31 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
           routine?: RoutineEntry[];
           exams?: ExamEntry[];
         };
-        if (parsed.diary) setDiary(parsed.diary);
         if (parsed.routine) setRoutine(parsed.routine);
-        if (parsed.exams) setExams(parsed.exams);
+        if (parsed.exams) {
+          // Filter out legacy mock exam IDs (ex-1, ex-2, ex-3 or starting with "ex-")
+          const sanitized = parsed.exams.filter((e) => e && e.id && !e.id.startsWith("ex-"));
+          setExams(sanitized);
+        }
+        // Purge legacy diary cache from localStorage if present
+        if (parsed.diary) {
+          delete parsed.diary;
+          localStorage.setItem(KEY, JSON.stringify(parsed));
+        }
       }
     } catch {
       /* ignore */
     }
   }, []);
 
-  // Persist to localStorage whenever data changes
+  // Persist routine and exams to localStorage whenever data changes (diary is never persisted to localStorage)
   useEffect(() => {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ diary, routine, exams }));
+      localStorage.setItem(KEY, JSON.stringify({ routine, exams }));
     } catch {
       /* ignore */
     }
-  }, [diary, routine, exams]);
+  }, [routine, exams]);
 
   // Check Firebase authentication status for admin
   useEffect(() => {
@@ -520,7 +474,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [isAdmin]);
 
-  // Set up Firestore listener for diary (read-only for non-admin, read+write for admin)
+  // Set up Firestore listener for diary (Firestore is the single source of truth)
   useEffect(() => {
     try {
       const diaryCollection = collection(db, "diary");
@@ -534,29 +488,20 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
             ...doc.data(),
           })) as DiaryEntry[];
 
-          // Merge: prioritize Firestore data, fallback to localStorage
-          setDiary((localDiary) => {
-            const diaryMap = new Map(localDiary.map((d) => [d.id, d]));
-
-            remoteDiary.forEach((remote) => {
-              diaryMap.set(remote.id, remote);
-            });
-
-            return Array.from(diaryMap.values());
-          });
-
+          // Firestore is authoritative for diary: remote collection directly sets diary
+          setDiary(remoteDiary);
           setFirestoreReady(true);
         },
         (error) => {
           console.warn("Firestore diary listener error:", error);
-          setFirestoreReady(true); // Continue with localStorage
+          setFirestoreReady(true);
         },
       );
 
       return unsubscribe;
     } catch (error) {
       console.warn("Firestore diary setup error:", error);
-      setFirestoreReady(true); // Continue with localStorage
+      setFirestoreReady(true);
       return () => {};
     }
   }, []);
@@ -639,16 +584,8 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
             ...doc.data(),
           })) as ExamEntry[];
 
-          // Merge: prioritize Firestore data, fallback to localStorage
-          setExams((localExams) => {
-            const examsMap = new Map(localExams.map((e) => [e.id, e]));
-
-            remoteExams.forEach((remote) => {
-              examsMap.set(remote.id, remote);
-            });
-
-            return Array.from(examsMap.values());
-          });
+          // Firestore is authoritative for exams: remote collection directly sets exams
+          setExams(remoteExams);
         },
         (error) => {
           console.warn("Firestore exams listener error:", error);

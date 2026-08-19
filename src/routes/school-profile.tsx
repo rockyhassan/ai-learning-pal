@@ -42,7 +42,7 @@ function SchoolProfile() {
         </div>
       </SectionCard>
 
-      <SectionCard title={t("Routine", "রুটিন")} hint={<Pill tone="primary">Sat–Thu</Pill>}>
+      <SectionCard title={t("Routine", "রুটিন")} hint={<Pill tone="primary">Sun–Thu</Pill>}>
         <ul className="divide-y divide-border">
           {routine.slice(0, 5).map((r) => (
             <li key={r.time} className="flex items-center gap-3 py-2 text-sm">
