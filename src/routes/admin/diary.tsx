@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Save, Trash2, Edit3, CheckCircle2, RefreshCw, AlertCircle } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { Plus, Save, Trash2, Edit3, CheckCircle2, RefreshCw, AlertCircle, ChevronDown, Check } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { PageShell, Pill, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
 import {
@@ -25,6 +25,104 @@ export const Route = createFileRoute("/admin/diary")({
   }),
   component: AdminDiary,
 });
+
+interface SubjectComboboxProps {
+  value: string;
+  onChange: (value: string) => void;
+  suggestions: string[];
+  placeholder?: string;
+  className?: string;
+}
+
+export function SubjectCombobox({
+  value,
+  onChange,
+  suggestions,
+  placeholder,
+  className = "w-full rounded-2xl border border-border bg-muted px-3 py-2 text-sm outline-none",
+}: SubjectComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(() => {
+    const trimmed = (value || "").trim().toLowerCase();
+    if (!trimmed) return suggestions;
+    const matches = suggestions.filter((s) => s.toLowerCase().includes(trimmed));
+    return matches.length > 0 ? matches : suggestions;
+  }, [suggestions, value]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            onChange(e.target.value);
+            if (!open) setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          className={`${className} pr-9`}
+          autoComplete="off"
+        />
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => setOpen((prev) => !prev)}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 transition-transform"
+          aria-label="Toggle subject dropdown"
+        >
+          <ChevronDown
+            className={`size-4 transition-transform duration-200 ${open ? "rotate-180 text-primary" : ""}`}
+          />
+        </button>
+      </div>
+
+      {open && suggestions.length > 0 && (
+        <ul className="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-2xl border border-border bg-popover p-1.5 shadow-xl">
+          {filtered.map((s) => {
+            const isSelected = (value || "").trim().toLowerCase() === s.toLowerCase();
+            return (
+              <li key={s}>
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // Prevents input blur race conditions before state updates
+                    onChange(s);
+                    setOpen(false);
+                  }}
+                  className={`tap flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground font-bold shadow-xs"
+                      : "text-popover-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span>{s}</span>
+                  {isSelected && <Check className="size-3.5 shrink-0" />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 const empty = { subject: "", cw: "", hw: "", remarks: "", answer: "" };
 
@@ -160,12 +258,6 @@ function AdminDiary() {
       subtitle={t("Add, edit & delete entries", "এন্ট্রি যোগ, সম্পাদনা ও মুছে ফেলা")}
       back="/admin"
     >
-      <datalist id="admin-diary-subject-suggestions">
-        {subjectSuggestions.map((s) => (
-          <option key={s} value={s} />
-        ))}
-      </datalist>
-
       {/* Global Subject Rename Tool */}
       <SectionCard
         title={t("Rename Subject Globally", "বিষয়সমূহের নাম সংশোধন ও একীকরণ")}
@@ -250,12 +342,11 @@ function AdminDiary() {
                   <label className="text-xs font-bold text-muted-foreground block mb-1">
                     {t("New Subject Name", "নতুন বা সংশোধিত নাম")}
                   </label>
-                  <input
-                    type="text"
+                  <SubjectCombobox
                     value={newSubjectName}
-                    onChange={(e) => setNewSubjectName(e.target.value)}
+                    onChange={(val) => setNewSubjectName(val)}
+                    suggestions={subjectSuggestions}
                     placeholder={t("e.g. English Language", "যেমন: English Language")}
-                    list="admin-diary-subject-suggestions"
                     className={field}
                   />
                 </div>
@@ -378,14 +469,12 @@ function AdminDiary() {
           <div>
             <label className="text-xs font-bold text-muted-foreground">{t("Subject", "বিষয়")}</label>
             <div className="mt-1">
-              <input
-                type="text"
+              <SubjectCombobox
                 value={draft.subject}
-                onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
+                onChange={(val) => setDraft({ ...draft, subject: val })}
+                suggestions={subjectSuggestions}
                 placeholder={t("Enter or select subject (e.g. English Language)", "বিষয় লিখুন বা নির্বাচন করুন (যেমন: English Language)")}
-                list="admin-diary-subject-suggestions"
                 className={field}
-                autoComplete="off"
               />
             </div>
             {/* Quick-pick subject chips derived dynamically from database */}
@@ -479,6 +568,7 @@ function AdminDiary() {
                 onSave={updateDiary}
                 onDelete={removeDiary}
                 field={field}
+                subjectSuggestions={subjectSuggestions}
               />
             ))}
           </ul>
@@ -493,11 +583,13 @@ function DiaryRow({
   onSave,
   onDelete,
   field,
+  subjectSuggestions = [],
 }: {
   entry: DiaryEntry;
   onSave: (id: string, patch: Partial<DiaryEntry>) => void;
   onDelete: (id: string) => void;
   field: string;
+  subjectSuggestions?: string[];
 }) {
   const { t } = useApp();
   const [edit, setEdit] = useState(false);
@@ -551,14 +643,12 @@ function DiaryRow({
       <div>
         <label className="text-xs font-bold text-muted-foreground">{t("Subject", "বিষয়")}</label>
         <div className="mt-1">
-          <input
-            type="text"
+          <SubjectCombobox
             value={form.subject}
-            onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            onChange={(val) => setForm({ ...form, subject: val })}
+            suggestions={subjectSuggestions}
             placeholder={t("Subject", "বিষয়")}
-            list="admin-diary-subject-suggestions"
             className={field}
-            autoComplete="off"
           />
         </div>
       </div>
@@ -625,3 +715,4 @@ function DiaryRow({
     </li>
   );
 }
+
