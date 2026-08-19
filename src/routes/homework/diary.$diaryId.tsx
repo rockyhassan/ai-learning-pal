@@ -3,7 +3,7 @@ import { ChevronDown, ChevronUp, Save, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { PageShell, SectionCard } from "@/components/app-shell";
 import { useApp } from "@/lib/app-state";
-import { useSchoolContent, type DiaryEntry } from "@/lib/school-content";
+import { useSchoolContent, type DiaryEntry, getUniqueSubjects, normalizeSubject } from "@/lib/school-content";
 import { useAccess } from "@/lib/access-store";
 import { DiaryContentEditor } from "@/components/DiaryContentEditor";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
@@ -172,7 +172,7 @@ function DiaryDetail() {
   const { diaryId } = Route.useParams();
   const { t } = useApp();
   const { currentUser } = useAccess();
-  const { diary, updateDiary } = useSchoolContent();
+  const { diary, routine, updateDiary } = useSchoolContent();
   const entry = diary.find((d) => d.id === diaryId);
   const isAdmin = currentUser?.role === "admin";
 
@@ -200,12 +200,23 @@ function DiaryDetail() {
         subtitle={entry.date}
         back="/homework"
       >
-        <input
-          value={form.subject}
-          onChange={(e) => setForm({ ...form, subject: e.target.value })}
-          placeholder={t("Subject", "বিষয়")}
-          className={field}
-        />
+        <datalist id="diary-detail-subject-suggestions">
+          {getUniqueSubjects(diary, routine).map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+
+        <SectionCard title={t("Subject", "বিষয়")}>
+          <input
+            type="text"
+            value={form.subject}
+            onChange={(e) => setForm({ ...form, subject: e.target.value })}
+            placeholder={t("Subject", "বিষয়")}
+            list="diary-detail-subject-suggestions"
+            className={field}
+            autoComplete="off"
+          />
+        </SectionCard>
 
         <SectionCard title={t("Classwork", "ক্লাসওয়ার্ক")}>
           <textarea
@@ -391,7 +402,7 @@ function DiaryDetail() {
           <button
             onClick={() => {
               const patch: Partial<DiaryEntry> = {
-                subject: form.subject,
+                subject: normalizeSubject(form.subject) || form.subject.trim(),
                 cw: form.cw,
                 hw: form.hw,
                 remarks: form.remarks || "",

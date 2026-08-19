@@ -199,67 +199,7 @@ export function getDateCategory(dateStr: string): "today" | "yesterday" | "older
 
 const seedDiary: DiaryEntry[] = [];
 
-const seedRoutine: RoutineEntry[] = [
-  {
-    id: "r-1",
-    day: "Sun",
-    start: "08:00",
-    end: "08:10",
-    subject: "National Anthem & Surah Fatiha",
-    teacher: "",
-  },
-  {
-    id: "r-2",
-    day: "Sun",
-    start: "08:10",
-    end: "08:45",
-    subject: "English Literature",
-    teacher: "Jabed Ahmed",
-  },
-  { id: "r-3", day: "Sun", start: "08:45", end: "09:20", subject: "English Language", teacher: "" },
-  { id: "r-4", day: "Sun", start: "09:20", end: "09:35", subject: "Snacks Break", teacher: "" },
-  {
-    id: "r-5",
-    day: "Sun",
-    start: "09:35",
-    end: "10:05",
-    subject: "Physical Education & Sports",
-    teacher: "",
-  },
-  {
-    id: "r-6",
-    day: "Sun",
-    start: "10:05",
-    end: "10:40",
-    subject: "English Literature",
-    teacher: "",
-  },
-  { id: "r-7", day: "Sun", start: "10:40", end: "11:15", subject: "Geography", teacher: "" },
-  {
-    id: "r-8",
-    day: "Mon",
-    start: "08:00",
-    end: "08:10",
-    subject: "National Anthem & Surah Fatiha",
-    teacher: "",
-  },
-  {
-    id: "r-9",
-    day: "Mon",
-    start: "08:10",
-    end: "08:45",
-    subject: "Maths",
-    teacher: "Rafiqul Islam",
-  },
-  {
-    id: "r-10",
-    day: "Mon",
-    start: "08:45",
-    end: "09:20",
-    subject: "Science",
-    teacher: "Tania Akter",
-  },
-];
+const seedRoutine: RoutineEntry[] = [];
 
 const seedExams: ExamEntry[] = [];
 
@@ -401,7 +341,7 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
       // Start a new entry
       currentEntry = {
         date,
-        subject: subject || "General",
+        subject: normalizeSubject(subject) || "General",
         cw,
         hw,
         remarks: remarks || undefined,
@@ -426,6 +366,8 @@ type Ctx = {
   addDiaryMany: (list: Omit<DiaryEntry, "id">[]) => void;
   updateDiary: (id: string, patch: Partial<DiaryEntry>) => void;
   removeDiary: (id: string) => void;
+  renameSubjectGlobally: (oldSubjectName: string, newSubjectName: string) => Promise<{ updatedCount: number }>;
+  deleteSubjectGlobally: (subjectName: string) => Promise<{ deletedDiaryCount: number; deletedRoutineCount: number }>;
   addRoutine: (e: Omit<RoutineEntry, "id">) => void;
   updateRoutine: (id: string, patch: Partial<RoutineEntry>) => void;
   removeRoutine: (id: string) => void;
@@ -458,7 +400,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
           routine?: RoutineEntry[];
           exams?: ExamEntry[];
         };
-        if (parsed.routine) setRoutine(parsed.routine);
+        if (parsed.routine && parsed.routine.length > 0) setRoutine(parsed.routine);
         if (parsed.exams) {
           // Filter out legacy mock exam IDs (ex-1, ex-2, ex-3 or starting with "ex-")
           const sanitized = parsed.exams.filter((e) => e && e.id && !e.id.startsWith("ex-"));
@@ -608,6 +550,245 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
     [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
   );
 
+  /**
+   * Rename a subject globally across all historical diary entries (and routine entries).
+   * Normalizes strings, updates local state immediately, and executes a batch update on Firestore.
+   */
+  const renameSubjectGlobally = useCallback(
+    async (oldSubjectName: string, newSubjectName: string): Promise<{ updatedCount: number }> => {
+      const rawOld = (oldSubjectName || "").trim();
+      const rawNew = (newSubjectName || "").trim();
+      if (!rawOld || !rawNew) return { updatedCount: 0 };
+
+      const normOld = normalizeSubject(rawOld).toLowerCase();
+      const normNew = normalizeSubject(rawNew);
+      if (!normNew || normOld === normNew.toLowerCase()) return { updatedCount: 0 };
+
+      // Update local diary state
+      let localCount = 0;
+      setDiary((prev) =>
+        prev.map((e) => {
+          if (e.subject && normalizeSubject(e.subject).toLowerCase() === normOld) {
+            localCount++;
+            return { ...e, subject: normNew };
+          }
+          return e;
+        }),
+      );
+
+      // Update local routine state
+      setRoutine((prev) =>
+        prev.map((r) => {
+          if (r.subject && normalizeSubject(r.subject).toLowerCase() === normOld) {
+            return { ...r, subject: normNew };
+          }
+          return r;
+        }),
+      );
+
+      // If admin with Firebase auth & firestore ready, batch update in Firestore
+      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+        try {
+          const diarySnapshot = await getDocs(collection(db, "diary"));
+          const batch = writeBatch(db);
+          let batchCount = 0;
+
+          diarySnapshot.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.subject && normalizeSubject(data.subject).toLowerCase() === normOld) {
+              batch.update(doc(db, "diary", docSnap.id), { subject: normNew });
+              batchCount++;
+            }
+          });
+
+          const routineSnapshot = await getDocs(collection(db, "routine"));
+          routineSnapshot.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.subject && normalizeSubject(data.subject).toLowerCase() === normOld) {
+              batch.update(doc(db, "routine", docSnap.id), { subject: normNew });
+              batchCount++;
+            }
+          });
+
+          if (batchCount > 0) {
+            await batch.commit();
+          }
+          return { updatedCount: batchCount || localCount };
+        } catch (err) {
+          console.error("Firestore renameSubjectGlobally error:", err);
+          return { updatedCount: localCount };
+        }
+      }
+
+      return { updatedCount: localCount };
+    },
+    [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
+  );
+
+  /**
+   * Delete a subject globally across all historical diary entries and routine entries.
+   * Normalizes subjectName, cleans up local state immediately, and batch deletes matching documents from Firestore.
+   */
+  const deleteSubjectGlobally = useCallback(
+    async (subjectName: string): Promise<{ deletedDiaryCount: number; deletedRoutineCount: number }> => {
+      const raw = (subjectName || "").trim();
+      if (!raw) return { deletedDiaryCount: 0, deletedRoutineCount: 0 };
+
+      const normTarget = normalizeSubject(raw).toLowerCase();
+      if (!normTarget) return { deletedDiaryCount: 0, deletedRoutineCount: 0 };
+
+      // Update local diary state
+      let localDiaryDeleted = 0;
+      setDiary((prev) =>
+        prev.filter((e) => {
+          if (e.subject && normalizeSubject(e.subject).toLowerCase() === normTarget) {
+            localDiaryDeleted++;
+            return false;
+          }
+          return true;
+        }),
+      );
+
+      // Update local routine state
+      let localRoutineDeleted = 0;
+      setRoutine((prev) =>
+        prev.filter((r) => {
+          if (r.subject && normalizeSubject(r.subject).toLowerCase() === normTarget) {
+            localRoutineDeleted++;
+            return false;
+          }
+          return true;
+        }),
+      );
+
+      // If admin with Firebase auth & firestore ready, batch delete from Firestore
+      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+        try {
+          const diarySnapshot = await getDocs(collection(db, "diary"));
+          const routineSnapshot = await getDocs(collection(db, "routine"));
+
+          const docsToDelete: { ref: ReturnType<typeof doc>; type: "diary" | "routine" }[] = [];
+
+          diarySnapshot.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.subject && normalizeSubject(data.subject).toLowerCase() === normTarget) {
+              docsToDelete.push({ ref: doc(db, "diary", docSnap.id), type: "diary" });
+            }
+          });
+
+          routineSnapshot.docs.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.subject && normalizeSubject(data.subject).toLowerCase() === normTarget) {
+              docsToDelete.push({ ref: doc(db, "routine", docSnap.id), type: "routine" });
+            }
+          });
+
+          let remoteDiaryDeleted = 0;
+          let remoteRoutineDeleted = 0;
+
+          // Commit deletions in batches of up to 450 (Firestore limit is 500)
+          for (let i = 0; i < docsToDelete.length; i += 450) {
+            const batch = writeBatch(db);
+            const chunk = docsToDelete.slice(i, i + 450);
+            chunk.forEach((item) => {
+              batch.delete(item.ref);
+              if (item.type === "diary") remoteDiaryDeleted++;
+              else remoteRoutineDeleted++;
+            });
+            await batch.commit();
+          }
+
+          return {
+            deletedDiaryCount: remoteDiaryDeleted || localDiaryDeleted,
+            deletedRoutineCount: remoteRoutineDeleted || localRoutineDeleted,
+          };
+        } catch (err) {
+          console.error("Firestore deleteSubjectGlobally error:", err);
+          return {
+            deletedDiaryCount: localDiaryDeleted,
+            deletedRoutineCount: localRoutineDeleted,
+          };
+        }
+      }
+
+      return {
+        deletedDiaryCount: localDiaryDeleted,
+        deletedRoutineCount: localRoutineDeleted,
+      };
+    },
+    [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
+  );
+
+  // Set up Firestore listener for routine
+  useEffect(() => {
+    try {
+      const routineCollection = collection(db, "routine");
+      const q = query(routineCollection);
+
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const remoteRoutine = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as RoutineEntry[];
+
+          // Firestore is authoritative for routine
+          setRoutine(remoteRoutine);
+        },
+        (error) => {
+          console.warn("Firestore routine listener error:", error);
+        },
+      );
+
+      return unsubscribe;
+    } catch (error) {
+      console.warn("Firestore routine setup error:", error);
+      return () => {};
+    }
+  }, []);
+
+  const addRoutine = useCallback(
+    (e: Omit<RoutineEntry, "id">) => {
+      const newId = uid();
+      const entry: RoutineEntry = { ...e, id: newId };
+      setRoutine((p) => [...p, entry]);
+
+      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+        setDoc(doc(db, "routine", newId), entry).catch((error) => {
+          console.error("Firestore addRoutine error:", error);
+        });
+      }
+    },
+    [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
+  );
+
+  const updateRoutine = useCallback(
+    (id: string, patch: Partial<RoutineEntry>) => {
+      setRoutine((p) => p.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+
+      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+        setDoc(doc(db, "routine", id), patch, { merge: true }).catch((error) => {
+          console.error("Firestore updateRoutine error:", error);
+        });
+      }
+    },
+    [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
+  );
+
+  const removeRoutine = useCallback(
+    (id: string) => {
+      setRoutine((p) => p.filter((e) => e.id !== id));
+
+      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+        deleteDoc(doc(db, "routine", id)).catch((error) => {
+          console.error("Firestore removeRoutine error:", error);
+        });
+      }
+    },
+    [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
+  );
+
   // Set up Firestore listener for exams
   useEffect(() => {
     try {
@@ -684,18 +865,6 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
     [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
   );
 
-  const addRoutine = useCallback((e: Omit<RoutineEntry, "id">) => {
-    setRoutine((p) => [...p, { ...e, id: uid() }]);
-  }, []);
-
-  const updateRoutine = useCallback((id: string, patch: Partial<RoutineEntry>) => {
-    setRoutine((p) => p.map((e) => (e.id === id ? { ...e, ...patch } : e)));
-  }, []);
-
-  const removeRoutine = useCallback((id: string) => {
-    setRoutine((p) => p.filter((e) => e.id !== id));
-  }, []);
-
   const value = useMemo(
     () => ({
       diary,
@@ -705,6 +874,8 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       addDiaryMany,
       updateDiary,
       removeDiary,
+      renameSubjectGlobally,
+      deleteSubjectGlobally,
       addRoutine,
       updateRoutine,
       removeRoutine,
@@ -720,6 +891,8 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       addDiaryMany,
       updateDiary,
       removeDiary,
+      renameSubjectGlobally,
+      deleteSubjectGlobally,
       addRoutine,
       updateRoutine,
       removeRoutine,
@@ -749,23 +922,140 @@ export function sortRoutine(list: RoutineEntry[]) {
   });
 }
 
-/** Get unique subjects from diary entries, sorted alphabetically. */
-export function getUniqueDiarySubjects(diary: DiaryEntry[]): string[] {
-  const subjects = new Set<string>();
+/**
+ * Normalizes subject names:
+ * - Trims extra whitespace and collapses multiple internal spaces.
+ * - Converts to standardized Title Case while preserving uppercase acronyms (e.g. ICT, PE, GK)
+ *   and conjunctions/symbols (e.g. &, and, of, in, on, at, to, for, with).
+ */
+export function normalizeSubject(subject: string): string {
+  if (!subject) return "";
+  const cleaned = subject.trim().replace(/\s+/g, " ");
+  if (!cleaned) return "";
 
-  for (const entry of diary) {
-    if (entry.subject && entry.subject.trim()) {
-      subjects.add(entry.subject.trim());
+  const acronyms = new Set(["ICT", "PE", "GK", "IT", "AI"]);
+  const minorWords = new Set(["and", "or", "of", "in", "on", "at", "to", "for", "with", "a", "an", "the", "&"]);
+
+  const words = cleaned.split(" ");
+  const normalizedWords = words.map((word, index) => {
+    // Preserve symbol &
+    if (word === "&") return "&";
+
+    const upperWord = word.toUpperCase();
+    if (acronyms.has(upperWord)) {
+      return upperWord;
+    }
+
+    const lowerWord = word.toLowerCase();
+    if (index > 0 && minorWords.has(lowerWord)) {
+      return lowerWord;
+    }
+
+    // Capitalize word (supporting hyphens or slashes if any)
+    if (word.includes("-")) {
+      return word
+        .split("-")
+        .map((part) =>
+          part.length > 0 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : ""
+        )
+        .join("-");
+    }
+    if (word.includes("/")) {
+      return word
+        .split("/")
+        .map((part) =>
+          part.length > 0 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : ""
+        )
+        .join("/");
+    }
+
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  });
+
+  return normalizedWords.join(" ");
+}
+
+/**
+ * Helper to identify non-academic break slots from routine entries
+ * (e.g. Snacks Break, Lunch Break, Break).
+ */
+function isBreakSlot(subject: string): boolean {
+  const lower = subject.trim().toLowerCase();
+  return (
+    lower === "break" ||
+    lower === "snack" ||
+    lower === "snacks" ||
+    lower === "snacks break" ||
+    lower === "snack break" ||
+    lower === "tiffin" ||
+    lower === "tiffin break" ||
+    lower === "lunch" ||
+    lower === "lunch break"
+  );
+}
+
+/**
+ * Extract unique, normalized subjects dynamically.
+ * Prioritizes live diary entries. If routine is provided, also collects non-break routine subjects.
+ * Deduplicates using case-insensitive keys so case variations do not create separate duplicate entries.
+ */
+export function getUniqueSubjects(
+  diary: DiaryEntry[] = [],
+  routine?: RoutineEntry[]
+): string[] {
+  const subjectMap = new Map<string, string>(); // lowercaseKey -> normalizedSubject
+
+  // Collect from diary first (actual recorded subjects)
+  if (Array.isArray(diary)) {
+    for (const entry of diary) {
+      if (entry?.subject && entry.subject.trim()) {
+        const normalized = normalizeSubject(entry.subject);
+        if (normalized) {
+          const key = normalized.toLowerCase();
+          if (!subjectMap.has(key)) {
+            subjectMap.set(key, normalized);
+          }
+        }
+      }
     }
   }
 
-  return Array.from(subjects).sort();
+  // Collect from routine if provided (excluding break slots)
+  if (Array.isArray(routine) && routine.length > 0) {
+    for (const item of routine) {
+      if (item?.subject && item.subject.trim() && !isBreakSlot(item.subject)) {
+        const normalized = normalizeSubject(item.subject);
+        if (normalized) {
+          const key = normalized.toLowerCase();
+          if (!subjectMap.has(key)) {
+            subjectMap.set(key, normalized);
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(subjectMap.values()).sort((a, b) => a.localeCompare(b));
 }
 
-/** Get all diary entries for a subject, sorted by date (newest first). */
+/** Get unique subjects from diary entries and optional routine, sorted alphabetically. */
+export function getUniqueDiarySubjects(
+  diary: DiaryEntry[] = [],
+  routine?: RoutineEntry[]
+): string[] {
+  return getUniqueSubjects(diary, routine);
+}
+
+/** Get all diary entries for a subject, matched case-insensitively and sorted by date (newest first). */
 export function filterDiaryBySubject(diary: DiaryEntry[], subject: string): DiaryEntry[] {
-  return diary
-    .filter((entry) => entry.subject.trim() === subject.trim())
+  if (!subject || !subject.trim()) return [];
+  const target = subject.trim().toLowerCase();
+
+  return (Array.isArray(diary) ? diary : [])
+    .filter((entry) => {
+      if (!entry?.subject) return false;
+      return entry.subject.trim().toLowerCase() === target;
+    })
     .sort((a, b) => {
       // Handle undefined dates
       if (!a.date && !b.date) return 0;

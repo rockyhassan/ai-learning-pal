@@ -1,35 +1,68 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { SectionCard } from "@/components/app-shell";
 import { DiaryItemCard } from "@/components/diary-item-card";
 import { useApp } from "@/lib/app-state";
 import {
   type DiaryEntry,
+  type RoutineEntry,
   formatDiaryDate,
-  getUniqueDiarySubjects,
+  getUniqueSubjects,
   filterDiaryBySubject,
+  useSchoolContent,
 } from "@/lib/school-content";
 
 interface SubjectHistoryProps {
-  diary: DiaryEntry[];
+  diary?: DiaryEntry[];
+  routine?: RoutineEntry[];
 }
 
-export function SubjectHistory({ diary }: SubjectHistoryProps) {
+export function SubjectHistory({ diary: propDiary }: SubjectHistoryProps = {}) {
   const { t } = useApp();
+  const schoolContent = useSchoolContent();
+  const diary = propDiary ?? schoolContent.diary;
 
-  // Get unique subjects from diary, sorted alphabetically
-  const subjects = useMemo(() => getUniqueDiarySubjects(diary), [diary]);
+  // Get unique, normalized subjects strictly from live diary entries
+  const subjects = useMemo(() => getUniqueSubjects(diary), [diary]);
 
-  // Start with first subject, or empty if no subjects
-  const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0] ?? "");
+  // Track the user-selected subject
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
 
-  // Get entries for selected subject, sorted by date (newest first)
+  // Determine active subject, auto-selecting first subject if empty or not matching available subjects
+  const activeSubject = useMemo(() => {
+    if (subjects.length === 0) return "";
+    if (
+      selectedSubject &&
+      subjects.some((s) => s.toLowerCase() === selectedSubject.trim().toLowerCase())
+    ) {
+      return (
+        subjects.find((s) => s.toLowerCase() === selectedSubject.trim().toLowerCase()) ??
+        selectedSubject
+      );
+    }
+    return subjects[0] ?? "";
+  }, [subjects, selectedSubject]);
+
+  // Keep internal state in sync with valid activeSubject
+  useEffect(() => {
+    if (activeSubject && activeSubject !== selectedSubject) {
+      setSelectedSubject(activeSubject);
+    }
+  }, [activeSubject, selectedSubject]);
+
+  // Get entries for selected subject, matched case-insensitively and sorted newest first
   const entries = useMemo(
-    () => (selectedSubject ? filterDiaryBySubject(diary, selectedSubject) : []),
-    [diary, selectedSubject],
+    () => (activeSubject ? filterDiaryBySubject(diary, activeSubject) : []),
+    [diary, activeSubject],
   );
 
   if (subjects.length === 0) {
-    return null; // Don't render if no diary entries
+    return (
+      <SectionCard title={t("Subject History", "বিষয়ের ইতিহাস")}>
+        <p className="text-sm text-muted-foreground">
+          {t("No subjects found in diary or routine.", "ডায়েরি বা রুটিনে কোনো বিষয় পাওয়া যায়নি।")}
+        </p>
+      </SectionCard>
+    );
   }
 
   // Group entries by date
@@ -55,7 +88,7 @@ export function SubjectHistory({ diary }: SubjectHistoryProps) {
         </label>
         <div className="relative">
           <select
-            value={selectedSubject}
+            value={activeSubject}
             onChange={(e) => setSelectedSubject(e.target.value)}
             className="w-full rounded-2xl border border-border bg-card px-3 py-2.5 text-sm font-semibold outline-none appearance-none pr-10 cursor-pointer hover:bg-muted transition-colors"
           >
