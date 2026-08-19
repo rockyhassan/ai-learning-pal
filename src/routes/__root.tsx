@@ -82,6 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#0284c7" },
       { title: "Wafi — AI Learning Companion for Kids" },
       {
         name: "description",
@@ -107,7 +108,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/icon-192x192.png", type: "image/png" },
+      { rel: "apple-touch-icon", href: "/icon-192x192.png" },
+      { rel: "manifest", href: "/manifest.json" },
     ],
   }),
   shellComponent: RootShell,
