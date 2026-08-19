@@ -130,7 +130,7 @@ export function getSubjectBadgeMeta(subject: string): SubjectBadgeMeta {
 }
 
 export interface DiaryItemCardProps {
-  entry: Pick<DiaryEntry, "id" | "subject"> & Partial<Pick<DiaryEntry, "cw" | "hw">>;
+  entry: Pick<DiaryEntry, "id" | "subject"> & Partial<Pick<DiaryEntry, "cw" | "hw" | "remarks">>;
   className?: string;
 }
 
@@ -157,7 +157,7 @@ export function DiaryItemCard({ entry, className = "" }: DiaryItemCardProps) {
           {entry.subject}
         </h3>
 
-        {(entry.cw || entry.hw) && (
+        {(entry.cw || entry.hw || entry.remarks) && (
           <div className="mt-2 space-y-1.5">
             {entry.cw && (
               <div className="flex items-start gap-2">
@@ -176,6 +176,16 @@ export function DiaryItemCard({ entry, className = "" }: DiaryItemCardProps) {
                 </span>
                 <p className="text-sm font-medium text-slate-700 leading-snug break-words flex-1">
                   {entry.hw}
+                </p>
+              </div>
+            )}
+            {entry.remarks && (
+              <div className="flex items-start gap-2">
+                <span className="inline-flex items-center shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-xs font-bold text-purple-700 border border-purple-100/80">
+                  {t("Remarks", "মন্তব্য")}:
+                </span>
+                <p className="text-sm font-medium text-slate-700 leading-snug break-words flex-1">
+                  {entry.remarks}
                 </p>
               </div>
             )}

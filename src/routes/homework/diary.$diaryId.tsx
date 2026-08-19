@@ -227,6 +227,16 @@ function DiaryDetail() {
           />
         </SectionCard>
 
+        <SectionCard title={t("Remarks (optional)", "মন্তব্য (ঐচ্ছিক)")}>
+          <textarea
+            value={form.remarks || ""}
+            onChange={(e) => setForm({ ...form, remarks: e.target.value })}
+            placeholder={t("Enter remarks or notes", "মন্তব্য বা নোট লিখুন")}
+            rows={2}
+            className={field}
+          />
+        </SectionCard>
+
         <SectionCard title={t("School Answer", "স্কুল উত্তর")}>
           <div>
             <label className="text-xs font-bold text-muted-foreground">{t("Answers", "উত্তর")}</label>
@@ -384,6 +394,7 @@ function DiaryDetail() {
                 subject: form.subject,
                 cw: form.cw,
                 hw: form.hw,
+                remarks: form.remarks || "",
                 answer: form.answer,
                 ...(form.teacherAnswer?.trim() && { teacherAnswer: form.teacherAnswer.trim() }),
                 ...(form.easyAnswer?.trim() && { easyAnswer: form.easyAnswer.trim() }),
@@ -441,6 +452,19 @@ function DiaryDetail() {
           {entry.hw || t("No homework assigned", "কোনো হোমওয়ার্ক দেওয়া হয়নি")}
         </p>
       </SectionCard>
+
+      {entry.remarks && (
+        <SectionCard title={t("Remarks", "মন্তব্য")}>
+          <div className="flex items-start gap-2">
+            <span className="inline-flex items-center shrink-0 rounded bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700 border border-purple-100/80">
+              {t("Remarks", "মন্তব্য")}
+            </span>
+            <p className="text-sm leading-relaxed text-slate-700 font-medium">
+              {entry.remarks}
+            </p>
+          </div>
+        </SectionCard>
+      )}
 
       {entry.answer && (
         <SectionCard title={t("School Answer", "স্কুল উত্তর")}>

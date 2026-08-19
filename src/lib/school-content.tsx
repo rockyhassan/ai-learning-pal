@@ -27,6 +27,7 @@ export type DiaryEntry = {
   subject: string;
   cw: string;
   hw: string;
+  remarks?: string;
   answer: string;
   // Advanced homework fields
   teacherAnswer?: string;
@@ -263,11 +264,12 @@ const seedRoutine: RoutineEntry[] = [
 const seedExams: ExamEntry[] = [];
 
 /**
- * Recognize C.W and H.W field labels (case-insensitive):
+ * Recognize C.W, H.W, and Remarks field labels (case-insensitive):
  * - "C.W", "C.W:", "C.W (Class Work)", "Class Work"
  * - "H.W", "H.W:", "H.W (Home Work)", "Home Work"
+ * - "Remarks", "Remarks:", "Remark", "Note", "Notes:", "R:", "R.", "R -", "মন্তব্য:", "মন্তব্য"
  */
-function getFieldLabel(line: string): "cw" | "hw" | null {
+function getFieldLabel(line: string): "cw" | "hw" | "remarks" | null {
   const normalized = line.trim().toLowerCase();
 
   // Check for C.W variants (C.W, C.W:, C.W -, C.W (Class Work), etc.)
@@ -280,44 +282,69 @@ function getFieldLabel(line: string): "cw" | "hw" | null {
     return "hw";
   }
 
+  // Check for Remarks / Note / R / মন্তব্য variants
+  if (
+    /^remarks?(\s|:|$|-|\()/i.test(normalized) ||
+    /^notes?(\s|:|$|-|\()/i.test(normalized) ||
+    /^r(\.|:|\s*-)(\s|$)/i.test(normalized) ||
+    /^r\s*\(remarks?\)/i.test(normalized) ||
+    /^মন্তব্য(\s|:|$|-|\()/i.test(normalized)
+  ) {
+    return "remarks";
+  }
+
   return null;
 }
 
 /**
  * Extract the content after a field label.
  * "C.W: content" → "content"
- * "C.W (Class Work) - content" → "content"
- * "Class Work content" → "content"
+ * "H.W: content" → "content"
+ * "Remarks: content" → "content"
  */
-function extractFieldContent(line: string, label: "cw" | "hw"): string {
+function extractFieldContent(line: string, label: "cw" | "hw" | "remarks"): string {
   const trimmed = line.trim();
 
   // For C.W variants
-  if (/^c\.w/i.test(trimmed)) {
-    // Remove "C.W", "C.W:", "C.W -", "C.W (Class Work)", "C.W (Class Work) -", etc.
-    return trimmed.replace(/^c\.w\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
-  }
-
-  if (/^class\s+work/i.test(trimmed)) {
-    // Remove "Class Work", "Class Work:", "Class Work -", etc.
-    return trimmed.replace(/^class\s+work\s*[:\-]?\s*/i, "").trim();
+  if (label === "cw") {
+    if (/^c\.w/i.test(trimmed)) {
+      return trimmed.replace(/^c\.w\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
+    }
+    if (/^class\s+work/i.test(trimmed)) {
+      return trimmed.replace(/^class\s+work\s*[:\-]?\s*/i, "").trim();
+    }
   }
 
   // For H.W variants
-  if (/^h\.w/i.test(trimmed)) {
-    // Remove "H.W", "H.W:", "H.W -", "H.W (Home Work)", "H.W (Home Work) -", etc.
-    return trimmed.replace(/^h\.w\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
+  if (label === "hw") {
+    if (/^h\.w/i.test(trimmed)) {
+      return trimmed.replace(/^h\.w\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
+    }
+    if (/^home\s+work/i.test(trimmed)) {
+      return trimmed.replace(/^home\s+work\s*[:\-]?\s*/i, "").trim();
+    }
   }
 
-  if (/^home\s+work/i.test(trimmed)) {
-    // Remove "Home Work", "Home Work:", "Home Work -", etc.
-    return trimmed.replace(/^home\s+work\s*[:\-]?\s*/i, "").trim();
+  // For Remarks variants
+  if (label === "remarks") {
+    if (/^remarks?/i.test(trimmed)) {
+      return trimmed.replace(/^remarks?\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
+    }
+    if (/^notes?/i.test(trimmed)) {
+      return trimmed.replace(/^notes?\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
+    }
+    if (/^r(\.|:|\s*-)/i.test(trimmed) || /^r\s*\(/i.test(trimmed)) {
+      return trimmed.replace(/^r(\s*\([^)]*\))?\s*[:\.\-]?\s*/i, "").trim();
+    }
+    if (/^মন্তব্য/i.test(trimmed)) {
+      return trimmed.replace(/^মন্তব্য\s*[:\-]?\s*(\([^)]*\)\s*[:\-]?\s*)?/i, "").trim();
+    }
   }
 
   return trimmed;
 }
 
-/** Parse pasted school-diary text into entries. Supports "Subject | C.W | H.W", single-line subjects, and multi-line subjects with C.W/H.W field labels. */
+/** Parse pasted school-diary text into entries. Supports "Subject | C.W | H.W | Remarks", single-line subjects, and multi-line subjects with C.W/H.W/Remarks field labels. */
 export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id">[] {
   const lines = text
     .split("\n")
@@ -330,25 +357,27 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
   for (const line of lines) {
     const fieldLabel = getFieldLabel(line);
 
-    if (fieldLabel === "cw" || fieldLabel === "hw") {
-      // This is a field label line (C.W or H.W)
+    if (fieldLabel === "cw" || fieldLabel === "hw" || fieldLabel === "remarks") {
+      // This is a field label line (C.W, H.W or Remarks)
       if (!currentEntry) {
         // No active subject; create a default one
-        currentEntry = { date, subject: "General", cw: "", hw: "", answer: "" };
+        currentEntry = { date, subject: "General", cw: "", hw: "", remarks: "", answer: "" };
       }
 
       // Extract content and populate the appropriate field
       const content = extractFieldContent(line, fieldLabel);
       if (fieldLabel === "cw") {
         currentEntry.cw = content;
-      } else {
+      } else if (fieldLabel === "hw") {
         currentEntry.hw = content;
+      } else if (fieldLabel === "remarks") {
+        currentEntry.remarks = content;
       }
     } else {
       // This is a subject line (or delimiter-based single-line entry)
 
       // First, save the current entry if it exists
-      if (currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw)) {
+      if (currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw || currentEntry.remarks)) {
         entries.push(currentEntry);
       }
 
@@ -367,7 +396,7 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
         parts = [line];
       }
 
-      const [subject = "", cw = "", hw = "", answer = ""] = parts.map((p) => p.trim());
+      const [subject = "", cw = "", hw = "", remarks = "", answer = ""] = parts.map((p) => p.trim());
 
       // Start a new entry
       currentEntry = {
@@ -375,13 +404,14 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
         subject: subject || "General",
         cw,
         hw,
+        remarks: remarks || undefined,
         answer,
       };
     }
   }
 
   // Don't forget the last entry
-  if (currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw)) {
+  if (currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw || currentEntry.remarks)) {
     entries.push(currentEntry);
   }
 
@@ -483,10 +513,14 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       const unsubscribe = onSnapshot(
         q,
         (snapshot) => {
-          const remoteDiary = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as DiaryEntry[];
+          const remoteDiary = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              remarks: data.remarks || "",
+            } as DiaryEntry;
+          });
 
           // Firestore is authoritative for diary: remote collection directly sets diary
           setDiary(remoteDiary);
@@ -508,7 +542,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
   const addDiary = useCallback(
     (e: Omit<DiaryEntry, "id">) => {
       const newId = uid();
-      const entry: DiaryEntry = { ...e, id: newId };
+      const entry: DiaryEntry = { ...e, remarks: e.remarks || "", id: newId };
 
       // Always update local state
       setDiary((p) => [entry, ...p]);
@@ -525,7 +559,11 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
 
   const addDiaryMany = useCallback(
     (list: Omit<DiaryEntry, "id">[]) => {
-      const entries: DiaryEntry[] = list.map((e) => ({ ...e, id: uid() }));
+      const entries: DiaryEntry[] = list.map((e) => ({
+        ...e,
+        remarks: e.remarks || "",
+        id: uid(),
+      }));
       setDiary((p) => [...entries, ...p]);
 
       // If admin with Firebase auth and Firestore ready, batch write to Firestore

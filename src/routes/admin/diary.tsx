@@ -19,7 +19,7 @@ export const Route = createFileRoute("/admin/diary")({
   component: AdminDiary,
 });
 
-const empty = { subject: "", cw: "", hw: "", answer: "" };
+const empty = { subject: "", cw: "", hw: "", remarks: "", answer: "" };
 
 function AdminDiary() {
   const { t } = useApp();
@@ -66,8 +66,8 @@ function AdminDiary() {
               onChange={(e) => setPaste(e.target.value)}
               rows={5}
               placeholder={t(
-                "One line per subject:\nMaths | Ex 2.5 pg 26 | Pg 26 (5,6)\nScience: Chapter 1 done | Revise",
-                "প্রতি লাইনে এক বিষয়:\nMaths | Ex 2.5 pg 26 | Pg 26 (5,6)",
+                "One line per subject:\nMaths | Ex 2.5 pg 26 | Pg 26 (5,6) | Bring compass\n\nOr multi-line:\nMaths\nC.W: Chapter 1 done\nH.W: Page 10\nRemarks: Bring scale",
+                "প্রতি লাইনে এক বিষয়:\nMaths | Ex 2.5 pg 26 | Pg 26 (5,6) | মন্তব্য",
               )}
               className={`${field} font-mono text-xs`}
             />
@@ -118,6 +118,17 @@ function AdminDiary() {
                 value={draft.hw}
                 onChange={(value) => setDraft({ ...draft, hw: value })}
                 placeholder={t("Enter homework details...", "হোমওয়ার্কের বিবরণ লিখুন...")}
+                rows={2}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-muted-foreground">{t("Remarks (optional)", "মন্তব্য (ঐচ্ছিক)")}</label>
+            <div className="mt-1">
+              <DiaryContentEditor
+                value={draft.remarks || ""}
+                onChange={(value) => setDraft({ ...draft, remarks: value })}
+                placeholder={t("Enter remarks or notes...", "মন্তব্য বা নোট লিখুন...")}
                 rows={2}
               />
             </div>
@@ -188,6 +199,12 @@ function DiaryRow({
             <p className="text-xs">{entry.cw || "—"}</p>
             <p className="mt-1 text-[11px] font-bold uppercase text-muted-foreground">H.W</p>
             <p className="text-xs">{entry.hw || "—"}</p>
+            {entry.remarks ? (
+              <>
+                <p className="mt-1 text-[11px] font-bold uppercase text-purple-600 dark:text-purple-400">{t("Remarks", "মন্তব্য")}</p>
+                <p className="text-xs text-slate-700 dark:text-slate-300">{entry.remarks}</p>
+              </>
+            ) : null}
             {entry.answer ? <p className="mt-1 text-xs text-primary">{entry.answer}</p> : null}
           </div>
           <button
@@ -232,6 +249,17 @@ function DiaryRow({
             value={form.hw}
             onChange={(value) => setForm({ ...form, hw: value })}
             placeholder="Enter homework details..."
+            rows={2}
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-bold text-muted-foreground">{t("Remarks (optional)", "মন্তব্য (ঐচ্ছিক)")}</label>
+        <div className="mt-1">
+          <DiaryContentEditor
+            value={form.remarks || ""}
+            onChange={(value) => setForm({ ...form, remarks: value })}
+            placeholder={t("Enter remarks or notes...", "মন্তব্য বা নোট লিখুন...")}
             rows={2}
           />
         </div>
