@@ -59,6 +59,14 @@ service cloud.firestore {
       allow read: if isAuth();
       allow create, update, delete: if isAdmin();
     }
+
+    // ========== ROUTINE COLLECTION ==========
+    // Any authenticated user can read; only admin users can create, update, or delete.
+    
+    match /routine/{routineId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isAdmin();
+    }
     
     // ========== EXAMS COLLECTION ==========
     // Any authenticated user can read; only admin users can create, update, or delete.

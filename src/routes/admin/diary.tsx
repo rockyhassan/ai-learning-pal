@@ -26,21 +26,6 @@ export const Route = createFileRoute("/admin/diary")({
   component: AdminDiary,
 });
 
-const DEFAULT_SUBJECT_SUGGESTIONS = [
-  "English Literature",
-  "English Language",
-  "Maths",
-  "Science",
-  "Geography",
-  "Bangla",
-  "Islam & Moral Education",
-  "ICT",
-  "Physical Education & Sports",
-  "General Knowledge",
-  "Art & Craft",
-  "Drawing",
-];
-
 const empty = { subject: "", cw: "", hw: "", remarks: "", answer: "" };
 
 function AdminDiary() {
@@ -91,18 +76,9 @@ function AdminDiary() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [diary]);
 
-  // Build unique, normalized subject suggestions from dynamic diary/routine and defaults
+  // Build unique, normalized subject suggestions dynamically from live diary & routine entries
   const subjectSuggestions = useMemo(() => {
-    const map = new Map<string, string>();
-    DEFAULT_SUBJECT_SUGGESTIONS.forEach((s) => {
-      const norm = normalizeSubject(s);
-      if (norm) map.set(norm.toLowerCase(), norm);
-    });
-    getUniqueSubjects(diary, routine).forEach((s) => {
-      const norm = normalizeSubject(s);
-      if (norm) map.set(norm.toLowerCase(), norm);
-    });
-    return Array.from(map.values()).sort((a, b) => a.localeCompare(b));
+    return getUniqueSubjects(diary, routine);
   }, [routine, diary]);
 
   const handleGlobalRename = async (e: React.FormEvent) => {
@@ -121,12 +97,13 @@ function AdminDiary() {
       });
       setOldSubjectToRename("");
       setNewSubjectName("");
-    } catch {
+    } catch (err: any) {
+      console.error("Failed to rename subject:", err);
       setRenameFeedback({
         type: "error",
         message: t(
-          "Failed to rename subject across database.",
-          "ডাটাবেজে বিষয়টির নাম পরিবর্তন করতে ব্যর্থ হয়েছে।",
+          `Failed to rename subject across database: ${err?.message || "Permission or network error"}`,
+          `ডাটাবেজে বিষয়টির নাম পরিবর্তন করতে ব্যর্থ হয়েছে: ${err?.message || "অনুমতি বা নেটওয়ার্ক ত্রুটি"}`,
         ),
       });
     } finally {
@@ -163,12 +140,13 @@ function AdminDiary() {
       });
       setOldSubjectToRename("");
       setNewSubjectName("");
-    } catch {
+    } catch (err: any) {
+      console.error("Failed to delete subject:", err);
       setRenameFeedback({
         type: "error",
         message: t(
-          `Failed to delete subject "${subjectName}" across database.`,
-          `ডাটাবেজ থেকে "${subjectName}" মুছতে ব্যর্থ হয়েছে।`,
+          `Failed to delete subject "${subjectName}" across database: ${err?.message || "Permission or network error"}`,
+          `ডাটাবেজ থেকে "${subjectName}" মুছতে ব্যর্থ হয়েছে: ${err?.message || "অনুমতি বা নেটওয়ার্ক ত্রুটি"}`,
         ),
       });
     } finally {
@@ -410,23 +388,25 @@ function AdminDiary() {
                 autoComplete="off"
               />
             </div>
-            {/* Quick-pick subject chips */}
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {DEFAULT_SUBJECT_SUGGESTIONS.slice(0, 6).map((sub) => (
-                <button
-                  key={sub}
-                  type="button"
-                  onClick={() => setDraft({ ...draft, subject: sub })}
-                  className={`tap rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
-                    draft.subject === sub
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:bg-muted"
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
+            {/* Quick-pick subject chips derived dynamically from database */}
+            {subjectSuggestions.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {subjectSuggestions.slice(0, 8).map((sub) => (
+                  <button
+                    key={sub}
+                    type="button"
+                    onClick={() => setDraft({ ...draft, subject: sub })}
+                    className={`tap rounded-full px-2.5 py-0.5 text-[11px] font-medium border transition-colors ${
+                      draft.subject === sub
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <label className="text-xs font-bold text-muted-foreground">C.W (Classwork)</label>

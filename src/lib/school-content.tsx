@@ -366,7 +366,7 @@ type Ctx = {
   addDiaryMany: (list: Omit<DiaryEntry, "id">[]) => void;
   updateDiary: (id: string, patch: Partial<DiaryEntry>) => void;
   removeDiary: (id: string) => void;
-  renameSubjectGlobally: (oldSubjectName: string, newSubjectName: string) => Promise<{ updatedCount: number }>;
+  renameSubjectGlobally: (oldSubjectName: string, newSubjectName: string) => Promise<{ updatedCount: number; updatedDiaryCount: number; updatedRoutineCount: number }>;
   deleteSubjectGlobally: (subjectName: string) => Promise<{ deletedDiaryCount: number; deletedRoutineCount: number }>;
   addRoutine: (e: Omit<RoutineEntry, "id">) => void;
   updateRoutine: (id: string, patch: Partial<RoutineEntry>) => void;
@@ -436,9 +436,9 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
 
     // Listen to Firebase auth state
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      const adminEmail = import.meta.env["VITE_FIREBASE_ADMIN_EMAIL"] || "";
-      const isAuthed =
-        firebaseUser && firebaseUser.email?.toLowerCase() === adminEmail.toLowerCase();
+      const adminEmail = (import.meta.env["VITE_FIREBASE_ADMIN_EMAIL"] || "").toLowerCase().trim();
+      const userEmail = firebaseUser?.email?.toLowerCase().trim() || "";
+      const isAuthed = !!firebaseUser && (isAdmin || (adminEmail.length > 0 && userEmail === adminEmail));
       setIsAdminAuthenticatedWithFirebase(isAuthed);
       setFirebaseAuthReady(true);
     });
@@ -490,7 +490,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       setDiary((p) => [entry, ...p]);
 
       // If admin with Firebase auth and Firestore ready, sync to Firestore
-      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+      if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
         setDoc(doc(db, "diary", newId), entry).catch((error) => {
           console.error("Firestore addDiary error:", error);
         });
@@ -509,7 +509,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       setDiary((p) => [...entries, ...p]);
 
       // If admin with Firebase auth and Firestore ready, batch write to Firestore
-      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+      if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
         const batch = writeBatch(db);
         entries.forEach((entry) => {
           batch.set(doc(db, "diary", entry.id), entry);
@@ -527,7 +527,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       setDiary((p) => p.map((e) => (e.id === id ? { ...e, ...patch } : e)));
 
       // If admin with Firebase auth and Firestore ready, sync update to Firestore
-      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+      if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
         setDoc(doc(db, "diary", id), patch, { merge: true }).catch((error) => {
           console.error("Firestore updateDiary error:", error);
         });
@@ -541,7 +541,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       setDiary((p) => p.filter((e) => e.id !== id));
 
       // If admin with Firebase auth and Firestore ready, delete from Firestore
-      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+      if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
         deleteDoc(doc(db, "diary", id)).catch((error) => {
           console.error("Firestore removeDiary error:", error);
         });
@@ -552,24 +552,30 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
 
   /**
    * Rename a subject globally across all historical diary entries (and routine entries).
-   * Normalizes strings, updates local state immediately, and executes a batch update on Firestore.
+   * Normalizes strings, updates local state immediately, and executes chunked batch updates on Firestore.
    */
   const renameSubjectGlobally = useCallback(
-    async (oldSubjectName: string, newSubjectName: string): Promise<{ updatedCount: number }> => {
+    async (oldSubjectName: string, newSubjectName: string): Promise<{ updatedCount: number; updatedDiaryCount: number; updatedRoutineCount: number }> => {
       const rawOld = (oldSubjectName || "").trim();
       const rawNew = (newSubjectName || "").trim();
-      if (!rawOld || !rawNew) return { updatedCount: 0 };
+      if (!rawOld || !rawNew) return { updatedCount: 0, updatedDiaryCount: 0, updatedRoutineCount: 0 };
 
       const normOld = normalizeSubject(rawOld).toLowerCase();
       const normNew = normalizeSubject(rawNew);
-      if (!normNew || normOld === normNew.toLowerCase()) return { updatedCount: 0 };
+      if (!normNew || normOld === normNew.toLowerCase()) {
+        return { updatedCount: 0, updatedDiaryCount: 0, updatedRoutineCount: 0 };
+      }
+
+      if (!isAdmin) {
+        throw new Error("Admin authorization required to rename subjects.");
+      }
 
       // Update local diary state
-      let localCount = 0;
+      let localDiaryCount = 0;
       setDiary((prev) =>
         prev.map((e) => {
           if (e.subject && normalizeSubject(e.subject).toLowerCase() === normOld) {
-            localCount++;
+            localDiaryCount++;
             return { ...e, subject: normNew };
           }
           return e;
@@ -577,50 +583,80 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
       );
 
       // Update local routine state
+      let localRoutineCount = 0;
       setRoutine((prev) =>
         prev.map((r) => {
           if (r.subject && normalizeSubject(r.subject).toLowerCase() === normOld) {
+            localRoutineCount++;
             return { ...r, subject: normNew };
           }
           return r;
         }),
       );
 
-      // If admin with Firebase auth & firestore ready, batch update in Firestore
-      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+      let remoteDiaryCount = 0;
+      let remoteRoutineCount = 0;
+
+      // If admin with Firebase auth & firestore ready, chunked batch update in Firestore
+      if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
+        // 1. Process diary collection in chunked batches (up to 450 items per batch)
         try {
           const diarySnapshot = await getDocs(collection(db, "diary"));
-          const batch = writeBatch(db);
-          let batchCount = 0;
+          const diaryDocsToUpdate: string[] = [];
 
           diarySnapshot.docs.forEach((docSnap) => {
             const data = docSnap.data();
             if (data.subject && normalizeSubject(data.subject).toLowerCase() === normOld) {
-              batch.update(doc(db, "diary", docSnap.id), { subject: normNew });
-              batchCount++;
+              diaryDocsToUpdate.push(docSnap.id);
             }
           });
 
+          for (let i = 0; i < diaryDocsToUpdate.length; i += 450) {
+            const batch = writeBatch(db);
+            const chunk = diaryDocsToUpdate.slice(i, i + 450);
+            chunk.forEach((docId) => {
+              batch.update(doc(db, "diary", docId), { subject: normNew });
+              remoteDiaryCount++;
+            });
+            await batch.commit();
+          }
+        } catch (err) {
+          console.error("Firestore renameSubjectGlobally diary error:", err);
+          throw err;
+        }
+
+        // 2. Process routine collection in chunked batches
+        try {
           const routineSnapshot = await getDocs(collection(db, "routine"));
+          const routineDocsToUpdate: string[] = [];
+
           routineSnapshot.docs.forEach((docSnap) => {
             const data = docSnap.data();
             if (data.subject && normalizeSubject(data.subject).toLowerCase() === normOld) {
-              batch.update(doc(db, "routine", docSnap.id), { subject: normNew });
-              batchCount++;
+              routineDocsToUpdate.push(docSnap.id);
             }
           });
 
-          if (batchCount > 0) {
+          for (let i = 0; i < routineDocsToUpdate.length; i += 450) {
+            const batch = writeBatch(db);
+            const chunk = routineDocsToUpdate.slice(i, i + 450);
+            chunk.forEach((docId) => {
+              batch.update(doc(db, "routine", docId), { subject: normNew });
+              remoteRoutineCount++;
+            });
             await batch.commit();
           }
-          return { updatedCount: batchCount || localCount };
         } catch (err) {
-          console.error("Firestore renameSubjectGlobally error:", err);
-          return { updatedCount: localCount };
+          console.warn("Firestore renameSubjectGlobally routine error:", err);
         }
       }
 
-      return { updatedCount: localCount };
+      const totalUpdated = remoteDiaryCount || localDiaryCount;
+      return {
+        updatedCount: totalUpdated,
+        updatedDiaryCount: remoteDiaryCount || localDiaryCount,
+        updatedRoutineCount: remoteRoutineCount || localRoutineCount,
+      };
     },
     [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
   );
@@ -636,6 +672,10 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
 
       const normTarget = normalizeSubject(raw).toLowerCase();
       if (!normTarget) return { deletedDiaryCount: 0, deletedRoutineCount: 0 };
+
+      if (!isAdmin) {
+        throw new Error("Admin authorization required to delete subjects.");
+      }
 
       // Update local diary state
       let localDiaryDeleted = 0;
@@ -661,59 +701,66 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
         }),
       );
 
+      let remoteDiaryDeleted = 0;
+      let remoteRoutineDeleted = 0;
+
       // If admin with Firebase auth & firestore ready, batch delete from Firestore
-      if (isAdmin && isAdminAuthenticatedWithFirebase && firestoreReady) {
+      if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
+        // 1. Delete from diary in chunked batches (up to 450 items per batch)
         try {
           const diarySnapshot = await getDocs(collection(db, "diary"));
-          const routineSnapshot = await getDocs(collection(db, "routine"));
-
-          const docsToDelete: { ref: ReturnType<typeof doc>; type: "diary" | "routine" }[] = [];
+          const diaryDocsToDelete: string[] = [];
 
           diarySnapshot.docs.forEach((docSnap) => {
             const data = docSnap.data();
             if (data.subject && normalizeSubject(data.subject).toLowerCase() === normTarget) {
-              docsToDelete.push({ ref: doc(db, "diary", docSnap.id), type: "diary" });
+              diaryDocsToDelete.push(docSnap.id);
             }
           });
+
+          for (let i = 0; i < diaryDocsToDelete.length; i += 450) {
+            const batch = writeBatch(db);
+            const chunk = diaryDocsToDelete.slice(i, i + 450);
+            chunk.forEach((docId) => {
+              batch.delete(doc(db, "diary", docId));
+              remoteDiaryDeleted++;
+            });
+            await batch.commit();
+          }
+        } catch (err) {
+          console.error("Firestore deleteSubjectGlobally diary error:", err);
+          throw err;
+        }
+
+        // 2. Delete from routine in chunked batches
+        try {
+          const routineSnapshot = await getDocs(collection(db, "routine"));
+          const routineDocsToDelete: string[] = [];
 
           routineSnapshot.docs.forEach((docSnap) => {
             const data = docSnap.data();
             if (data.subject && normalizeSubject(data.subject).toLowerCase() === normTarget) {
-              docsToDelete.push({ ref: doc(db, "routine", docSnap.id), type: "routine" });
+              routineDocsToDelete.push(docSnap.id);
             }
           });
 
-          let remoteDiaryDeleted = 0;
-          let remoteRoutineDeleted = 0;
-
-          // Commit deletions in batches of up to 450 (Firestore limit is 500)
-          for (let i = 0; i < docsToDelete.length; i += 450) {
+          for (let i = 0; i < routineDocsToDelete.length; i += 450) {
             const batch = writeBatch(db);
-            const chunk = docsToDelete.slice(i, i + 450);
-            chunk.forEach((item) => {
-              batch.delete(item.ref);
-              if (item.type === "diary") remoteDiaryDeleted++;
-              else remoteRoutineDeleted++;
+            const chunk = routineDocsToDelete.slice(i, i + 450);
+            chunk.forEach((docId) => {
+              batch.delete(doc(db, "routine", docId));
+              remoteRoutineDeleted++;
             });
             await batch.commit();
           }
-
-          return {
-            deletedDiaryCount: remoteDiaryDeleted || localDiaryDeleted,
-            deletedRoutineCount: remoteRoutineDeleted || localRoutineDeleted,
-          };
         } catch (err) {
-          console.error("Firestore deleteSubjectGlobally error:", err);
-          return {
-            deletedDiaryCount: localDiaryDeleted,
-            deletedRoutineCount: localRoutineDeleted,
-          };
+          console.warn("Firestore deleteSubjectGlobally routine error:", err);
         }
       }
 
       return {
-        deletedDiaryCount: localDiaryDeleted,
-        deletedRoutineCount: localRoutineDeleted,
+        deletedDiaryCount: remoteDiaryDeleted || localDiaryDeleted,
+        deletedRoutineCount: remoteRoutineDeleted || localRoutineDeleted,
       };
     },
     [isAdmin, isAdminAuthenticatedWithFirebase, firestoreReady],
