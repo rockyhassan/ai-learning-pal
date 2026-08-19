@@ -391,7 +391,7 @@ function AdminDiary() {
             {/* Quick-pick subject chips derived dynamically from database */}
             {subjectSuggestions.length > 0 && (
               <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {subjectSuggestions.slice(0, 8).map((sub) => (
+                {subjectSuggestions.map((sub) => (
                   <button
                     key={sub}
                     type="button"
