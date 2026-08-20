@@ -20,6 +20,57 @@ import {
   writeBatch,
   getDocs,
 } from "firebase/firestore";
+import {
+  resolveCanonicalSubject,
+  stripSectionTags,
+  CANONICAL_SUBJECT_NAMES,
+  MASTER_SUBJECTS,
+} from "./subjects";
+
+export { stripSectionTags };
+
+/**
+ * Checks if a subject string is intended for Wafi's section ("Neon").
+ * Wafi is in the Neon section.
+ * - Included: Unspecified section, Neon, (N), [N], (Neon), [Neon], Helium+Neon, Helium & Neon, (H & N), (H+N), (All), [All], All, Both.
+ * - Excluded: Explicitly tagged ONLY for Helium, e.g. (Helium), [Helium], (H), [H], Helium only.
+ */
+export function isNeonSectionEligible(subjectRaw: string): boolean {
+  if (!subjectRaw) return true;
+  const s = subjectRaw.trim();
+
+  // 1. Check if explicitly tagged with joint / all / Neon patterns
+  const hasNeonOrJoint =
+    /\bneon\b/i.test(s) ||
+    /\(\s*n\s*\)/i.test(s) ||
+    /\[\s*n\s*\]/i.test(s) ||
+    /\b(all|both)\b/i.test(s) ||
+    /\(\s*all\s*\)/i.test(s) ||
+    /\[\s*all\s*\]/i.test(s) ||
+    /\b(helium\s*(&|\+|and|,|\/)\s*neon|neon\s*(&|\+|and|,|\/)\s*helium)\b/i.test(s) ||
+    /\(\s*(h\s*(&|\+|and|,|\/)\s*n|n\s*(&|\+|and|,|\/)\s*h)\s*\)/i.test(s) ||
+    /\[\s*(h\s*(&|\+|and|,|\/)\s*n|n\s*(&|\+|and|,|\/)\s*h)\s*\]/i.test(s);
+
+  if (hasNeonOrJoint) {
+    return true;
+  }
+
+  // 2. Check if explicitly tagged for Helium ONLY
+  const isHeliumOnly =
+    /\(\s*helium(\s*only)?\s*\)/i.test(s) ||
+    /\[\s*helium(\s*only)?\s*\]/i.test(s) ||
+    /\(\s*h\s*\)/i.test(s) ||
+    /\[\s*h\s*\]/i.test(s) ||
+    /\bsec(?:tion)?\s*[:\-]?\s*(helium|h)\b/i.test(s) ||
+    /\bhelium\s+(only|section)\b/i.test(s) ||
+    /(?:^|[\s:\-|])helium\b/i.test(s);
+
+  if (isHeliumOnly) {
+    return false;
+  }
+
+  return true;
+}
 
 export type DiaryEntry = {
   id: string;
@@ -284,7 +335,11 @@ function extractFieldContent(line: string, label: "cw" | "hw" | "remarks"): stri
   return trimmed;
 }
 
-/** Parse pasted school-diary text into entries. Supports "Subject | C.W | H.W | Remarks", single-line subjects, and multi-line subjects with C.W/H.W/Remarks field labels. */
+/**
+ * Parse pasted school-diary text into entries with Section-Aware filtering (Wafi belongs to Neon section).
+ * Supports "Subject | C.W | H.W | Remarks", single-line subjects, and multi-line subjects with C.W/H.W/Remarks field labels.
+ * Automatically skips entries explicitly tagged only for Helium, and strips section tags from subject names.
+ */
 export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id">[] {
   const lines = text
     .split("\n")
@@ -293,11 +348,17 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
 
   const entries: Omit<DiaryEntry, "id">[] = [];
   let currentEntry: Omit<DiaryEntry, "id"> | null = null;
+  let isCurrentSkipped = false;
 
   for (const line of lines) {
     const fieldLabel = getFieldLabel(line);
 
     if (fieldLabel === "cw" || fieldLabel === "hw" || fieldLabel === "remarks") {
+      // If current entry was skipped due to Helium-only section, ignore its CW/HW/Remarks
+      if (isCurrentSkipped) {
+        continue;
+      }
+
       // This is a field label line (C.W, H.W or Remarks)
       if (!currentEntry) {
         // No active subject; create a default one
@@ -316,32 +377,64 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
     } else {
       // This is a subject line (or delimiter-based single-line entry)
 
-      // First, save the current entry if it exists
-      if (currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw || currentEntry.remarks)) {
+      // First, save the current entry if it exists and was not skipped
+      if (!isCurrentSkipped && currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw || currentEntry.remarks)) {
         entries.push(currentEntry);
       }
+      currentEntry = null;
 
       // Try to parse this as a single-line entry with delimiters
-      let parts: string[] = [];
+      let rawSubject = "";
+      let cw = "";
+      let hw = "";
+      let remarks = "";
+      let answer = "";
+
       if (line.includes("|")) {
-        parts = line.split("|");
+        // Check if there's a colon before the first pipe indicating "Subject: CW | HW..."
+        const firstPipeIdx = line.indexOf("|");
+        const colonIdx = line.indexOf(":");
+        if (colonIdx > 0 && colonIdx < firstPipeIdx && !line.toLowerCase().startsWith("http")) {
+          // Format: "Subject: CW | HW | Remarks"
+          rawSubject = line.slice(0, colonIdx).trim();
+          const rest = line.slice(colonIdx + 1);
+          const parts = rest.split("|").map((p) => p.trim());
+          [cw = "", hw = "", remarks = "", answer = ""] = parts;
+        } else {
+          // Format: "Subject | CW | HW | Remarks"
+          const parts = line.split("|").map((p) => p.trim());
+          [rawSubject = "", cw = "", hw = "", remarks = "", answer = ""] = parts;
+        }
       } else if (line.includes("\t")) {
-        parts = line.split("\t");
+        const parts = line.split("\t").map((p) => p.trim());
+        [rawSubject = "", cw = "", hw = "", remarks = "", answer = ""] = parts;
       } else if (line.includes(":") && !line.toLowerCase().startsWith("http")) {
-        // Avoid splitting URLs
+        // Format: "Subject: CW"
         const idx = line.indexOf(":");
-        parts = [line.slice(0, idx), line.slice(idx + 1)];
+        rawSubject = line.slice(0, idx).trim();
+        cw = line.slice(idx + 1).trim();
       } else {
-        // Just a subject line, no delimiters
-        parts = [line];
+        // Just a subject header line, no delimiters
+        rawSubject = line.trim();
       }
 
-      const [subject = "", cw = "", hw = "", remarks = "", answer = ""] = parts.map((p) => p.trim());
+      // Section filtering: Check if entry is intended for Neon section (Wafi's section)
+      if (!isNeonSectionEligible(rawSubject)) {
+        // Explicitly tagged for Helium only -> completely skip/omit
+        isCurrentSkipped = true;
+        currentEntry = null;
+        continue;
+      }
 
-      // Start a new entry
+      isCurrentSkipped = false;
+
+      // Clean section tags from subject before resolving canonical subject
+      const cleanedSubject = stripSectionTags(rawSubject);
+
+      // Start a new entry with strictly resolved canonical subject
       currentEntry = {
         date,
-        subject: normalizeSubject(subject) || "General",
+        subject: resolveCanonicalSubject(cleanedSubject) || "General",
         cw,
         hw,
         remarks: remarks || undefined,
@@ -351,7 +444,7 @@ export function parseDiaryText(text: string, date: string): Omit<DiaryEntry, "id
   }
 
   // Don't forget the last entry
-  if (currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw || currentEntry.remarks)) {
+  if (!isCurrentSkipped && currentEntry && (currentEntry.subject || currentEntry.cw || currentEntry.hw || currentEntry.remarks)) {
     entries.push(currentEntry);
   }
 
@@ -436,7 +529,7 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
 
     // Listen to Firebase auth state
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      const adminEmail = (import.meta.env["VITE_FIREBASE_ADMIN_EMAIL"] || "").toLowerCase().trim();
+      const adminEmail = (typeof import.meta !== "undefined" && import.meta.env ? import.meta.env["VITE_FIREBASE_ADMIN_EMAIL"] || "" : "").toLowerCase().trim();
       const userEmail = firebaseUser?.email?.toLowerCase().trim() || "";
       const isAuthed = !!firebaseUser && (isAdmin || (adminEmail.length > 0 && userEmail === adminEmail));
       setIsAdminAuthenticatedWithFirebase(isAuthed);
@@ -970,56 +1063,11 @@ export function sortRoutine(list: RoutineEntry[]) {
 }
 
 /**
- * Normalizes subject names:
- * - Trims extra whitespace and collapses multiple internal spaces.
- * - Converts to standardized Title Case while preserving uppercase acronyms (e.g. ICT, PE, GK)
- *   and conjunctions/symbols (e.g. &, and, of, in, on, at, to, for, with).
+ * Normalizes subject names by resolving them against the Canonical Master Subject registry.
  */
 export function normalizeSubject(subject: string): string {
   if (!subject) return "";
-  const cleaned = subject.trim().replace(/\s+/g, " ");
-  if (!cleaned) return "";
-
-  const acronyms = new Set(["ICT", "PE", "GK", "IT", "AI"]);
-  const minorWords = new Set(["and", "or", "of", "in", "on", "at", "to", "for", "with", "a", "an", "the", "&"]);
-
-  const words = cleaned.split(" ");
-  const normalizedWords = words.map((word, index) => {
-    // Preserve symbol &
-    if (word === "&") return "&";
-
-    const upperWord = word.toUpperCase();
-    if (acronyms.has(upperWord)) {
-      return upperWord;
-    }
-
-    const lowerWord = word.toLowerCase();
-    if (index > 0 && minorWords.has(lowerWord)) {
-      return lowerWord;
-    }
-
-    // Capitalize word (supporting hyphens or slashes if any)
-    if (word.includes("-")) {
-      return word
-        .split("-")
-        .map((part) =>
-          part.length > 0 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : ""
-        )
-        .join("-");
-    }
-    if (word.includes("/")) {
-      return word
-        .split("/")
-        .map((part) =>
-          part.length > 0 ? part.charAt(0).toUpperCase() + part.slice(1).toLowerCase() : ""
-        )
-        .join("/");
-    }
-
-    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-  });
-
-  return normalizedWords.join(" ");
+  return resolveCanonicalSubject(subject);
 }
 
 /**
@@ -1042,47 +1090,46 @@ function isBreakSlot(subject: string): boolean {
 }
 
 /**
- * Extract unique, normalized subjects dynamically.
- * Prioritizes live diary entries. If routine is provided, also collects non-break routine subjects.
- * Deduplicates using case-insensitive keys so case variations do not create separate duplicate entries.
+ * Extract unique, canonical subjects dynamically.
+ * Combines all Canonical Master Subjects with active subjects from live diary and routine.
+ * Deduplicates using case-insensitive keys.
  */
 export function getUniqueSubjects(
   diary: DiaryEntry[] = [],
   routine?: RoutineEntry[]
 ): string[] {
-  const subjectMap = new Map<string, string>(); // lowercaseKey -> normalizedSubject
+  const subjectMap = new Map<string, string>(); // lowercaseKey -> canonicalSubjectName
 
-  // Collect from diary first (actual recorded subjects)
+  // 1. Populate all Canonical Master Subjects first
+  for (const name of CANONICAL_SUBJECT_NAMES) {
+    subjectMap.set(name.toLowerCase(), name);
+  }
+
+  // 2. Add any active diary subjects resolved canonically
   if (Array.isArray(diary)) {
     for (const entry of diary) {
       if (entry?.subject && entry.subject.trim()) {
-        const normalized = normalizeSubject(entry.subject);
-        if (normalized) {
-          const key = normalized.toLowerCase();
-          if (!subjectMap.has(key)) {
-            subjectMap.set(key, normalized);
-          }
+        const canonical = resolveCanonicalSubject(entry.subject);
+        if (canonical && !subjectMap.has(canonical.toLowerCase())) {
+          subjectMap.set(canonical.toLowerCase(), canonical);
         }
       }
     }
   }
 
-  // Collect from routine if provided (excluding break slots)
+  // 3. Add any routine subjects resolved canonically (excluding break slots)
   if (Array.isArray(routine) && routine.length > 0) {
     for (const item of routine) {
       if (item?.subject && item.subject.trim() && !isBreakSlot(item.subject)) {
-        const normalized = normalizeSubject(item.subject);
-        if (normalized) {
-          const key = normalized.toLowerCase();
-          if (!subjectMap.has(key)) {
-            subjectMap.set(key, normalized);
-          }
+        const canonical = resolveCanonicalSubject(item.subject);
+        if (canonical && !subjectMap.has(canonical.toLowerCase())) {
+          subjectMap.set(canonical.toLowerCase(), canonical);
         }
       }
     }
   }
 
-  return Array.from(subjectMap.values()).sort((a, b) => a.localeCompare(b));
+  return Array.from(subjectMap.values());
 }
 
 /** Get unique subjects from diary entries and optional routine, sorted alphabetically. */

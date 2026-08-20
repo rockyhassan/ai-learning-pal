@@ -11,6 +11,7 @@ import {
   type RoutineEntry,
   type Weekday,
 } from "@/lib/school-content";
+import { resolveCanonicalSubject, CANONICAL_SUBJECT_NAMES } from "@/lib/subjects";
 
 export const Route = createFileRoute("/admin/routine")({
   head: () => ({
@@ -39,6 +40,12 @@ function AdminRoutine() {
       subtitle={t("Add, edit & delete periods", "পিরিয়ড যোগ, সম্পাদনা ও মুছে ফেলা")}
       back="/admin"
     >
+      <datalist id="routine-subject-options">
+        {CANONICAL_SUBJECT_NAMES.map((name) => (
+          <option key={name} value={name} />
+        ))}
+      </datalist>
+
       <SectionCard>
         <div className="flex flex-wrap gap-2">
           {weekdays.map((d) => (
@@ -61,7 +68,8 @@ function AdminRoutine() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!draft.subject.trim()) return;
-            addRoutine({ ...draft, day });
+            const subject = resolveCanonicalSubject(draft.subject);
+            addRoutine({ ...draft, subject, day });
             setDraft({ ...draft, subject: "", teacher: "" });
           }}
         >
@@ -72,7 +80,8 @@ function AdminRoutine() {
           <input
             value={draft.subject}
             onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
-            placeholder={t("Subject", "বিষয়")}
+            placeholder={t("Subject (e.g. Mathematics, English Literature)", "বিষয় (যেমন: Mathematics, English Literature)")}
+            list="routine-subject-options"
             className={field}
           />
           <input
@@ -157,7 +166,12 @@ function RoutineRow({
         <input type="time" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} className={field} />
         <input type="time" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} className={field} />
       </div>
-      <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className={field} />
+      <input
+        value={form.subject}
+        onChange={(e) => setForm({ ...form, subject: e.target.value })}
+        list="routine-subject-options"
+        className={field}
+      />
       <input
         value={form.teacher}
         onChange={(e) => setForm({ ...form, teacher: e.target.value })}
@@ -167,7 +181,8 @@ function RoutineRow({
       <div className="flex gap-2">
         <button
           onClick={() => {
-            onSave(entry.id, form);
+            const subject = resolveCanonicalSubject(form.subject);
+            onSave(entry.id, { ...form, subject });
             setEdit(false);
           }}
           className="tap flex flex-1 items-center justify-center gap-2 rounded-2xl bg-primary py-2.5 text-sm font-bold text-primary-foreground"

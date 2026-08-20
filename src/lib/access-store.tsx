@@ -141,7 +141,11 @@ type AccessState = {
 const AccessContext = createContext<AccessState | null>(null);
 
 const SESSION_KEY = "wafi.session.email";
-const ADMIN_EMAIL = (import.meta.env.VITE_FIREBASE_ADMIN_EMAIL || "").trim().toLowerCase();
+const rawAdminEmail =
+  (typeof import.meta !== "undefined" && (import.meta as any).env?.VITE_FIREBASE_ADMIN_EMAIL) ||
+  (typeof process !== "undefined" && process.env?.["VITE_FIREBASE_ADMIN_EMAIL"]) ||
+  "";
+const ADMIN_EMAIL = rawAdminEmail.trim().toLowerCase();
 
 export function AccessProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AccessUser | null>(null);
@@ -202,7 +206,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
               Array.isArray(userData.permissions) && userData.permissions.length > 0
                 ? (userData.permissions as FeatureKey[])
                 : rolePresets[resolvedRole] || rolePresets.student;
-          } else if (normalizedEmail === import.meta.env.VITE_FIREBASE_ADMIN_EMAIL?.toLowerCase()?.trim()) {
+          } else if (ADMIN_EMAIL && normalizedEmail === ADMIN_EMAIL) {
             resolvedRole = "admin";
             resolvedPermissions = rolePresets.admin;
           } else {

@@ -59,7 +59,7 @@ export function RouteGuard({ children }: { children: ReactNode }) {
 
   // 1. Public & Loading States
   if (isPublic) return <>{children}</>;
-  if (!authReady) return <div className="min-h-screen bg-background" />;
+  if (!authReady) return <div className="min-h-screen bg-canvas" />;
 
   // 2. Unauthenticated or Disabled State
   if (!currentUser) {

@@ -445,7 +445,7 @@ function DiaryDetail() {
               setForm(entry);
               setEdit(true);
             }}
-            className="tap rounded-xl bg-primary/12 px-3 py-1.5 text-xs font-bold text-primary"
+            className="tap inline-flex items-center gap-1.5 rounded-xl border border-primary-foreground/20 bg-primary-foreground/15 px-3 py-1.5 text-xs font-bold text-primary-foreground backdrop-blur-sm shadow-sm transition-colors hover:bg-primary-foreground/25"
           >
             {t("Edit", "এডিট")}
           </button>

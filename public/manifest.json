@@ -4,7 +4,7 @@
   "description": "Wafi Learning Buddy Application",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#38BDF8",
+  "background_color": "#F3F8FF",
   "theme_color": "#F3F8FF",
   "icons": [
     {

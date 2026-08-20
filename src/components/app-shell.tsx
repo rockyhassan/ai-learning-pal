@@ -19,10 +19,10 @@ export function SettingsButton() {
   return (
     <Link
       to="/settings"
-      className="tap inline-flex size-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft transition-colors hover:bg-accent/40"
+      className="tap inline-flex size-8 sm:size-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-soft transition-colors hover:bg-accent/40"
       aria-label="Settings"
     >
-      <Settings className="size-4" />
+      <Settings className="size-3.5 sm:size-4" />
     </Link>
   );
 }
@@ -33,10 +33,10 @@ export function LangToggle() {
     <button
       type="button"
       onClick={toggleLang}
-      className="tap inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-soft"
+      className="tap inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 sm:px-3 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-foreground shadow-soft"
       aria-label="Toggle language"
     >
-      <Languages className="size-3.5" />
+      <Languages className="size-3 sm:size-3.5" />
       {lang === "en" ? "EN" : "বাং"}
     </button>
   );
@@ -120,23 +120,23 @@ export function PageShell({
   return (
     <div className="relative min-h-screen w-full bg-canvas pb-28">
       <header className="sticky top-0 z-40 w-full gradient-hero text-primary-foreground">
-        <div className="relative mx-auto flex max-w-[800px] items-center justify-between px-6 pt-5 pb-5">
-          <div className="relative z-10 flex items-center gap-3 min-w-0 flex-1">
+        <div className="relative mx-auto flex max-w-[800px] items-center justify-between px-3.5 sm:px-6 pt-3.5 pb-3.5 sm:pt-5 sm:pb-5">
+          <div className="relative z-10 flex items-center gap-2 sm:gap-3 min-w-0 max-w-[34%] sm:max-w-none sm:flex-1">
             {back ? (
               <Link
                 to={back as "/"}
-                className="tap grid size-11 shrink-0 place-items-center rounded-2xl bg-primary-foreground/15 text-primary-foreground backdrop-blur-sm shadow-sm transition-colors hover:bg-primary-foreground/25"
+                className="tap grid size-8 sm:size-11 shrink-0 place-items-center rounded-xl sm:rounded-2xl bg-primary-foreground/15 text-primary-foreground backdrop-blur-sm shadow-sm transition-colors hover:bg-primary-foreground/25"
                 aria-label="Back"
               >
-                <ArrowLeft className="size-5" />
+                <ArrowLeft className="size-4 sm:size-5" />
               </Link>
             ) : null}
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-bold leading-tight tracking-tight text-primary-foreground">
+              <h1 className="truncate text-sm sm:text-lg font-bold leading-tight tracking-tight text-primary-foreground">
                 {title}
               </h1>
               {subtitle ? (
-                <p className="truncate text-xs text-primary-foreground/80 font-medium">
+                <p className="hidden sm:block truncate text-xs text-primary-foreground/80 font-medium">
                   {subtitle}
                 </p>
               ) : null}
@@ -148,11 +148,11 @@ export function PageShell({
             <img
               src="/wafi-learning-buddy-header.png"
               alt="Wafi Learning Buddy"
-              className="w-[125px] sm:w-[160px] md:w-[180px] h-auto max-h-10 object-contain drop-shadow-sm select-none"
+              className="w-[92px] sm:w-[160px] md:w-[180px] h-auto max-h-8 sm:max-h-10 object-contain drop-shadow-sm select-none"
             />
           </div>
 
-          <div className="relative z-10 flex items-center gap-2 shrink-0">
+          <div className="relative z-10 flex items-center gap-1.5 sm:gap-2 shrink-0">
             {action ?? (
               <>
                 <SettingsButton />
@@ -162,7 +162,7 @@ export function PageShell({
           </div>
         </div>
         {/* Curved background cutout attached to header bottom */}
-        <div className="mx-auto h-6 max-w-[800px] rounded-t-[2rem] bg-canvas" />
+        <div className="mx-auto h-5 sm:h-6 max-w-[800px] rounded-t-[1.5rem] sm:rounded-t-[2rem] bg-canvas" />
 
         {/* Smooth subtle gradient fade below the curved header for scrolling content */}
         <div className="pointer-events-none absolute top-full left-0 right-0 h-4 overflow-hidden">

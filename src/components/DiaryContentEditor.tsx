@@ -58,6 +58,16 @@ import {
  * @param placeholder - Placeholder text for first line
  * @param rows - Initial visible rows (optional)
  */
+function parseContentFromValue(val: string | null | undefined): RichTextContent {
+  if (!val) return createEmptyRichText();
+  const parsed = parseRichText(val);
+  if (parsed) return parsed;
+  if (typeof val === "string") {
+    return plainToRichText(val);
+  }
+  return createEmptyRichText();
+}
+
 interface DiaryContentEditorProps {
   value: string | null | undefined;
   onChange: (value: string) => void;
@@ -71,21 +81,7 @@ export function DiaryContentEditor({
   placeholder = "Enter your content here...",
   rows = 5,
 }: DiaryContentEditorProps) {
-  const [content, setContent] = useState<RichTextContent>(() => {
-    if (!value) return createEmptyRichText();
-    
-    // Try to parse as rich-text (JSON)
-    const parsed = parseRichText(value);
-    if (parsed) return parsed;
-    
-    // Fall back to treating as plain text (auto-conversion)
-    if (typeof value === "string") {
-      return plainToRichText(value);
-    }
-    
-    return createEmptyRichText();
-  });
-
+  const [content, setContent] = useState<RichTextContent>(() => parseContentFromValue(value));
   const [selectedBlockIndex, setSelectedBlockIndex] = useState(0);
   const [history, setHistory] = useState<RichTextContent[]>([content]);
   const [historyIndex, setHistoryIndex] = useState(0);
@@ -93,10 +89,29 @@ export function DiaryContentEditor({
   const [parseInput, setParseInput] = useState("");
   const textInputRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
 
-  // Sync changes back to parent
+  // Track the latest serialized string we emitted or synced from value prop
+  const lastSerializedRef = useRef<string>(value ?? "");
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const emitChange = (newContent: RichTextContent) => {
+    const serialized = serializeRichText(newContent);
+    lastSerializedRef.current = serialized;
+    onChangeRef.current(serialized);
+  };
+
+  // Sync incoming value from parent (e.g. form reset or changing entry) without triggering feedback loop
   useEffect(() => {
-    onChange(serializeRichText(content));
-  }, [content, onChange]);
+    const incomingVal = value ?? "";
+    if (incomingVal !== lastSerializedRef.current) {
+      const parsed = parseContentFromValue(value);
+      setContent(parsed);
+      setHistory([parsed]);
+      setHistoryIndex(0);
+      setSelectedBlockIndex(0);
+      lastSerializedRef.current = incomingVal;
+    }
+  }, [value]);
 
   const selectedBlock = content.blocks[selectedBlockIndex];
 
@@ -106,13 +121,16 @@ export function DiaryContentEditor({
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
     setContent(newContent);
+    emitChange(newContent);
   };
 
   const handleUndo = () => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
-      setContent(history[newIndex]);
+      const newContent = history[newIndex];
+      setContent(newContent);
+      emitChange(newContent);
     }
   };
 
@@ -120,7 +138,9 @@ export function DiaryContentEditor({
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
-      setContent(history[newIndex]);
+      const newContent = history[newIndex];
+      setContent(newContent);
+      emitChange(newContent);
     }
   };
 
