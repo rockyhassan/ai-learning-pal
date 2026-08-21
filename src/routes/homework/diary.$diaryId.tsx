@@ -6,7 +6,9 @@ import { useApp } from "@/lib/app-state";
 import { useSchoolContent, type DiaryEntry, getUniqueSubjects, normalizeSubject } from "@/lib/school-content";
 import { useAccess } from "@/lib/access-store";
 import { DiaryContentEditor } from "@/components/DiaryContentEditor";
+import { DiaryContentRenderer } from "@/components/DiaryContentRenderer";
 import { RichTextDisplay } from "@/components/RichTextDisplay";
+import { extractPlainTextFromRichJson, hasRichTextContent } from "@/lib/rich-text";
 
 export const Route = createFileRoute("/homework/diary/$diaryId")({
   head: () => ({
@@ -219,32 +221,29 @@ function DiaryDetail() {
         </SectionCard>
 
         <SectionCard title={t("Classwork", "ক্লাসওয়ার্ক")}>
-          <textarea
+          <DiaryContentEditor
             value={form.cw}
-            onChange={(e) => setForm({ ...form, cw: e.target.value })}
+            onChange={(value) => setForm({ ...form, cw: value })}
             placeholder={t("Enter classwork details", "ক্লাসওয়ার্কের বিবরণ লিখুন")}
             rows={2}
-            className={field}
           />
         </SectionCard>
 
         <SectionCard title={t("Homework", "হোমওয়ার্ক")}>
-          <textarea
+          <DiaryContentEditor
             value={form.hw}
-            onChange={(e) => setForm({ ...form, hw: e.target.value })}
+            onChange={(value) => setForm({ ...form, hw: value })}
             placeholder={t("Enter homework details", "হোমওয়ার্কের বিবরণ লিখুন")}
             rows={2}
-            className={field}
           />
         </SectionCard>
 
         <SectionCard title={t("Remarks (optional)", "মন্তব্য (ঐচ্ছিক)")}>
-          <textarea
+          <DiaryContentEditor
             value={form.remarks || ""}
-            onChange={(e) => setForm({ ...form, remarks: e.target.value })}
+            onChange={(value) => setForm({ ...form, remarks: value })}
             placeholder={t("Enter remarks or notes", "মন্তব্য বা নোট লিখুন")}
             rows={2}
-            className={field}
           />
         </SectionCard>
 
@@ -262,7 +261,7 @@ function DiaryDetail() {
           </div>
         </SectionCard>
 
-        {form.hw?.trim() && (
+        {hasRichTextContent(form.hw) && (
           <>
             <button
               type="button"
@@ -442,7 +441,12 @@ function DiaryDetail() {
         isAdmin && !edit ? (
           <button
             onClick={() => {
-              setForm(entry);
+              setForm({
+                ...entry,
+                cw: entry.cw || "",
+                hw: entry.hw || "",
+                remarks: entry.remarks || "",
+              });
               setEdit(true);
             }}
             className="tap inline-flex items-center gap-1.5 rounded-xl border border-primary-foreground/20 bg-primary-foreground/15 px-3 py-1.5 text-xs font-bold text-primary-foreground backdrop-blur-sm shadow-sm transition-colors hover:bg-primary-foreground/25"
@@ -453,26 +457,31 @@ function DiaryDetail() {
       }
     >
       <SectionCard title={t("Classwork", "ক্লাসওয়ার্ক")}>
-        <p className="text-sm leading-relaxed">
-          {entry.cw || t("No classwork recorded", "কোনো ক্লাসওয়ার্ক রেকর্ড করা হয়নি")}
-        </p>
+        <DiaryContentRenderer
+          content={entry.cw}
+          className="text-sm leading-relaxed"
+          fallback={t("No classwork recorded", "কোনো ক্লাসওয়ার্ক রেকর্ড করা হয়নি")}
+        />
       </SectionCard>
 
       <SectionCard title={t("Homework", "হোমওয়ার্ক")}>
-        <p className="text-sm leading-relaxed">
-          {entry.hw || t("No homework assigned", "কোনো হোমওয়ার্ক দেওয়া হয়নি")}
-        </p>
+        <DiaryContentRenderer
+          content={entry.hw}
+          className="text-sm leading-relaxed"
+          fallback={t("No homework assigned", "কোনো হোমওয়ার্ক দেওয়া হয়নি")}
+        />
       </SectionCard>
 
-      {entry.remarks && (
+      {hasRichTextContent(entry.remarks) && (
         <SectionCard title={t("Remarks", "মন্তব্য")}>
           <div className="flex items-start gap-2">
             <span className="inline-flex items-center shrink-0 rounded bg-purple-50 px-2 py-0.5 text-xs font-bold text-purple-700 border border-purple-100/80">
               {t("Remarks", "মন্তব্য")}
             </span>
-            <p className="text-sm leading-relaxed text-slate-700 font-medium">
-              {entry.remarks}
-            </p>
+            <DiaryContentRenderer
+              content={entry.remarks}
+              className="text-sm leading-relaxed text-slate-700 font-normal flex-1"
+            />
           </div>
         </SectionCard>
       )}
@@ -502,21 +511,21 @@ function DiaryDetail() {
         </SectionCard>
       )}
 
-      {entry.teacherAnswer && (
+      {hasRichTextContent(entry.teacherAnswer) && (
         <SectionCard title={t("Teacher's Answer", "শিক্ষকের উত্তর")}>
-          <p className="text-sm leading-relaxed">{entry.teacherAnswer}</p>
+          <DiaryContentRenderer content={entry.teacherAnswer} className="text-sm leading-relaxed" />
         </SectionCard>
       )}
 
-      {entry.easyAnswer && (
+      {hasRichTextContent(entry.easyAnswer) && (
         <SectionCard title={t("Easy Answer", "সহজ উত্তর")}>
-          <p className="text-sm leading-relaxed">{entry.easyAnswer}</p>
+          <DiaryContentRenderer content={entry.easyAnswer} className="text-sm leading-relaxed" />
         </SectionCard>
       )}
 
-      {entry.banglaExplanation && (
+      {hasRichTextContent(entry.banglaExplanation) && (
         <SectionCard title={t("Bangla Explanation", "বাংলা ব্যাখ্যা")}>
-          <p className="text-sm leading-relaxed">{entry.banglaExplanation}</p>
+          <DiaryContentRenderer content={entry.banglaExplanation} className="text-sm leading-relaxed" />
         </SectionCard>
       )}
 

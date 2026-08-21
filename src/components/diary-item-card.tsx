@@ -3,6 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { useApp } from "@/lib/app-state";
 import type { DiaryEntry } from "@/lib/school-content";
 import { getSubjectMeta, type SubjectBadgeMeta } from "@/lib/subjects";
+import { hasRichTextContent } from "@/lib/rich-text";
+import { DiaryContentRenderer } from "@/components/DiaryContentRenderer";
 
 export const getSubjectBadgeMeta = getSubjectMeta;
 export type { SubjectBadgeMeta };
@@ -16,6 +18,11 @@ export interface DiaryItemCardProps {
 export function DiaryItemCard({ entry, className = "" }: DiaryItemCardProps) {
   const { t } = useApp();
   const meta = getSubjectBadgeMeta(entry.subject);
+
+  const hasCw = hasRichTextContent(entry.cw);
+  const hasHw = hasRichTextContent(entry.hw);
+  const hasRemarks = hasRichTextContent(entry.remarks);
+  const hasContent = Boolean(hasCw || hasHw || hasRemarks);
 
   return (
     <Link
@@ -36,36 +43,39 @@ export function DiaryItemCard({ entry, className = "" }: DiaryItemCardProps) {
           {entry.subject}
         </h3>
 
-        {(entry.cw || entry.hw || entry.remarks) && (
+        {hasContent && (
           <div className="mt-2 space-y-1.5">
-            {entry.cw && (
+            {hasCw && (
               <div className="flex items-start gap-2">
                 <span className="inline-flex items-center shrink-0 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-bold text-blue-700 border border-blue-100/80">
                   {t("C.W", "সি.ডব্লু")}:
                 </span>
-                <p className="text-sm font-medium text-slate-700 leading-snug break-words flex-1">
-                  {entry.cw}
-                </p>
+                <DiaryContentRenderer
+                  content={entry.cw}
+                  className="text-sm text-slate-700 leading-snug break-words flex-1 font-normal"
+                />
               </div>
             )}
-            {entry.hw && (
+            {hasHw && (
               <div className="flex items-start gap-2">
                 <span className="inline-flex items-center shrink-0 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-bold text-amber-700 border border-amber-100/80">
                   {t("H.W", "এইচ.ডব্লু")}:
                 </span>
-                <p className="text-sm font-medium text-slate-700 leading-snug break-words flex-1">
-                  {entry.hw}
-                </p>
+                <DiaryContentRenderer
+                  content={entry.hw}
+                  className="text-sm text-slate-700 leading-snug break-words flex-1 font-normal"
+                />
               </div>
             )}
-            {entry.remarks && (
+            {hasRemarks && (
               <div className="flex items-start gap-2">
                 <span className="inline-flex items-center shrink-0 rounded bg-purple-50 px-1.5 py-0.5 text-xs font-bold text-purple-700 border border-purple-100/80">
                   {t("Remarks", "মন্তব্য")}:
                 </span>
-                <p className="text-sm font-medium text-slate-700 leading-snug break-words flex-1">
-                  {entry.remarks}
-                </p>
+                <DiaryContentRenderer
+                  content={entry.remarks}
+                  className="text-sm text-slate-700 leading-snug break-words flex-1 font-normal"
+                />
               </div>
             )}
           </div>

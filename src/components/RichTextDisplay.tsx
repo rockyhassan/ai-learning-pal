@@ -1,7 +1,8 @@
+import React from "react";
 import {
   parseRichText,
-  richToPlainText,
   isRichText,
+  parseInlineSegments,
   type RichTextContent,
 } from "@/lib/rich-text";
 
@@ -20,13 +21,13 @@ export function RichTextDisplay({
   className = "",
 }: RichTextDisplayProps) {
   if (!content) {
-    return <div className={`text-gray-500 italic ${className}`}>No answer provided</div>;
+    return <div className={`text-muted-foreground italic ${className}`}>No answer provided</div>;
   }
 
   // Check if content is rich-text
   if (isRichText(content)) {
     const parsed = parseRichText(content);
-    if (parsed) {
+    if (parsed && parsed.blocks && parsed.blocks.length > 0) {
       return <RichTextRenderer content={parsed} className={className} />;
     }
   }
@@ -44,10 +45,14 @@ function RichTextRenderer({ content, className = "" }: RichTextRendererProps) {
   return (
     <div className={className}>
       {content.blocks.map((block, index) => {
+        const isBold = block.marks?.includes("bold");
+        const isItalic = block.marks?.includes("italic");
+        const isUnderline = block.marks?.includes("underline");
+
         const textClasses = [
-          block.marks.includes("bold") ? "font-bold" : "",
-          block.marks.includes("italic") ? "italic" : "",
-          block.marks.includes("underline") ? "underline" : "",
+          isBold ? "font-bold text-slate-900 dark:text-white" : "",
+          isItalic ? "italic" : "",
+          isUnderline ? "underline" : "",
           block.align === "center" ? "text-center" : "",
           block.align === "right" ? "text-right" : "",
           block.align === "left" ? "text-left" : "",
@@ -55,26 +60,47 @@ function RichTextRenderer({ content, className = "" }: RichTextRendererProps) {
           .filter(Boolean)
           .join(" ");
 
-        const baseClasses = "text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words";
+        const baseClasses = "text-foreground whitespace-pre-wrap break-words";
         // Fixed line-height matching ruled notebook (1.75rem = 28px)
         const fixedLineHeight = "leading-[1.75rem] min-h-[1.75rem]";
-
         const fullClasses = textClasses ? `${textClasses} ${baseClasses} ${fixedLineHeight}` : `${baseClasses} ${fixedLineHeight}`;
+
+        const segments = parseInlineSegments(block.text || "", {
+          bold: isBold,
+          italic: isItalic,
+          underline: isUnderline,
+        });
+
+        const renderedText = segments.map((seg, idx) => {
+          const segClasses: string[] = [];
+          if (seg.bold) segClasses.push("font-bold text-slate-900 dark:text-white");
+          if (seg.italic) segClasses.push("italic");
+          if (seg.underline) segClasses.push("underline");
+
+          if (segClasses.length > 0) {
+            return (
+              <span key={idx} className={segClasses.join(" ")}>
+                {seg.text}
+              </span>
+            );
+          }
+          return <React.Fragment key={idx}>{seg.text}</React.Fragment>;
+        });
 
         if (block.type === "bullet-list") {
           return (
-            <div key={index} className={`flex gap-3 ${fullClasses}`}>
-              <span className="flex-shrink-0">•</span>
-              <span>{block.text}</span>
+            <div key={index} className={`flex items-start gap-3 ${fullClasses}`}>
+              <span className="flex-shrink-0 select-none">•</span>
+              <div className="flex-1 min-w-0">{renderedText}</div>
             </div>
           );
         }
 
         if (block.type === "numbered-list") {
           return (
-            <div key={index} className={`flex gap-3 ${fullClasses}`}>
-              <span className="flex-shrink-0">{index + 1}.</span>
-              <span>{block.text}</span>
+            <div key={index} className={`flex items-start gap-3 ${fullClasses}`}>
+              <span className="flex-shrink-0 select-none font-semibold">{index + 1}.</span>
+              <div className="flex-1 min-w-0">{renderedText}</div>
             </div>
           );
         }
@@ -82,7 +108,7 @@ function RichTextRenderer({ content, className = "" }: RichTextRendererProps) {
         // Paragraph
         return (
           <div key={index} className={fullClasses}>
-            {block.text}
+            {renderedText}
           </div>
         );
       })}
@@ -101,15 +127,32 @@ function PlainTextRenderer({ content, className = "" }: PlainTextRendererProps) 
 
   return (
     <div className={className}>
-      {lines.map((line, index) => (
-        <div
-          key={index}
-          className="text-gray-800 dark:text-gray-100 whitespace-pre-wrap break-words"
-          style={{ lineHeight: "1.75rem", minHeight: "1.75rem" }}
-        >
-          {line}
-        </div>
-      ))}
+      {lines.map((line, index) => {
+        const segments = parseInlineSegments(line);
+        return (
+          <div
+            key={index}
+            className="text-foreground whitespace-pre-wrap break-words"
+            style={{ lineHeight: "1.75rem", minHeight: "1.75rem" }}
+          >
+            {segments.map((seg, idx) => {
+              const segClasses: string[] = [];
+              if (seg.bold) segClasses.push("font-bold text-slate-900 dark:text-white");
+              if (seg.italic) segClasses.push("italic");
+              if (seg.underline) segClasses.push("underline");
+
+              if (segClasses.length > 0) {
+                return (
+                  <span key={idx} className={segClasses.join(" ")}>
+                    {seg.text}
+                  </span>
+                );
+              }
+              return <React.Fragment key={idx}>{seg.text}</React.Fragment>;
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }

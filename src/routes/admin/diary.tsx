@@ -38,7 +38,9 @@ import {
   type NormalizationExecutionResult,
 } from "@/lib/subject-migration";
 import { useAccess } from "@/lib/access-store";
+import { extractPlainTextFromRichJson, hasRichTextContent } from "@/lib/rich-text";
 import { DiaryContentEditor } from "@/components/DiaryContentEditor";
+import { DiaryContentRenderer } from "@/components/DiaryContentRenderer";
 
 export const Route = createFileRoute("/admin/diary")({
   head: () => ({
@@ -923,6 +925,9 @@ function DiaryRow({
   const meta = getSubjectMeta(entry.subject);
 
   if (!edit) {
+    const hasRemarks = hasRichTextContent(entry.remarks);
+    const hasAnswer = hasRichTextContent(entry.answer);
+
     return (
       <li className="rounded-2xl bg-muted p-3">
         <div className="flex items-start gap-2">
@@ -932,16 +937,20 @@ function DiaryRow({
               <p className="text-sm font-bold">{entry.subject}</p>
             </div>
             <p className="mt-1 text-[11px] font-bold uppercase text-muted-foreground">C.W</p>
-            <p className="text-xs">{entry.cw || "—"}</p>
+            <DiaryContentRenderer content={entry.cw} className="text-xs" fallback="—" />
             <p className="mt-1 text-[11px] font-bold uppercase text-muted-foreground">H.W</p>
-            <p className="text-xs">{entry.hw || "—"}</p>
-            {entry.remarks ? (
+            <DiaryContentRenderer content={entry.hw} className="text-xs" fallback="—" />
+            {hasRemarks ? (
               <>
                 <p className="mt-1 text-[11px] font-bold uppercase text-purple-600 dark:text-purple-400">{t("Remarks", "মন্তব্য")}</p>
-                <p className="text-xs text-slate-700 dark:text-slate-300">{entry.remarks}</p>
+                <DiaryContentRenderer content={entry.remarks} className="text-xs text-slate-700 dark:text-slate-300" />
               </>
             ) : null}
-            {entry.answer ? <p className="mt-1 text-xs text-primary">{entry.answer}</p> : null}
+            {hasAnswer ? (
+              <div className="mt-1">
+                <DiaryContentRenderer content={entry.answer} className="text-xs text-primary" />
+              </div>
+            ) : null}
           </div>
           <button
             onClick={() => {

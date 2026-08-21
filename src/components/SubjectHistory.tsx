@@ -14,6 +14,7 @@ import {
   getSubjectMeta,
   MASTER_SUBJECTS,
 } from "@/lib/subjects";
+import { hasRichTextContent } from "@/lib/rich-text";
 
 interface SubjectHistoryProps {
   diary?: DiaryEntry[];
@@ -60,7 +61,7 @@ export function SubjectHistory({ diary: propDiary }: SubjectHistoryProps = {}) {
         // Sort entries by date descending (newest first)
         const sorted = [...entries].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
         const latestEntry = sorted[0];
-        const hasHw = sorted.some((e) => !!e.hw && e.hw.trim().length > 0);
+        const hasHw = sorted.some((e) => hasRichTextContent(e.hw));
 
         groups.push({
           subjectName: ms.name,
@@ -78,7 +79,7 @@ export function SubjectHistory({ diary: propDiary }: SubjectHistoryProps = {}) {
       if (!processed.has(subjectName.toLowerCase())) {
         const sorted = [...entries].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
         const latestEntry = sorted[0];
-        const hasHw = sorted.some((e) => !!e.hw && e.hw.trim().length > 0);
+        const hasHw = sorted.some((e) => hasRichTextContent(e.hw));
 
         groups.push({
           subjectName,
