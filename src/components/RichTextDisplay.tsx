@@ -2,6 +2,7 @@ import React from "react";
 import {
   parseRichText,
   isRichText,
+  hasRichTextContent,
   parseInlineSegments,
   type RichTextContent,
 } from "@/lib/rich-text";
@@ -20,8 +21,8 @@ export function RichTextDisplay({
   content,
   className = "",
 }: RichTextDisplayProps) {
-  if (!content) {
-    return <div className={`text-muted-foreground italic ${className}`}>No answer provided</div>;
+  if (!hasRichTextContent(content)) {
+    return null;
   }
 
   // Check if content is rich-text
@@ -33,7 +34,7 @@ export function RichTextDisplay({
   }
 
   // Fall back to plain text
-  return <PlainTextRenderer content={content} className={className} />;
+  return <PlainTextRenderer content={typeof content === "string" ? content : ""} className={className} />;
 }
 
 interface RichTextRendererProps {

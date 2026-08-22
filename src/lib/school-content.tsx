@@ -617,11 +617,15 @@ export function SchoolContentProvider({ children }: { children: ReactNode }) {
 
   const updateDiary = useCallback(
     (id: string, patch: Partial<DiaryEntry>) => {
-      setDiary((p) => p.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+      const sanitizedPatch = Object.fromEntries(
+        Object.entries(patch).filter(([_, v]) => v !== undefined)
+      ) as Partial<DiaryEntry>;
+
+      setDiary((p) => p.map((e) => (e.id === id ? { ...e, ...sanitizedPatch } : e)));
 
       // If admin with Firebase auth and Firestore ready, sync update to Firestore
       if (isAdmin && (isAdminAuthenticatedWithFirebase || !!auth.currentUser) && firestoreReady) {
-        setDoc(doc(db, "diary", id), patch, { merge: true }).catch((error) => {
+        setDoc(doc(db, "diary", id), sanitizedPatch, { merge: true }).catch((error) => {
           console.error("Firestore updateDiary error:", error);
         });
       }

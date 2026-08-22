@@ -29,6 +29,7 @@ import {
   plainToRichText,
   serializeRichText,
   parseAnswerText,
+  hasRichTextContent,
 } from "@/lib/rich-text";
 
 /**
@@ -54,12 +55,12 @@ import {
  * 
  * Props:
  * @param value - Current content (string, JSON or plain-text)
- * @param onChange - Callback when content changes (emits JSON string)
+ * @param onChange - Callback when content changes (emits JSON string or empty string)
  * @param placeholder - Placeholder text for first line
  * @param rows - Initial visible rows (optional)
  */
 function parseContentFromValue(val: string | null | undefined): RichTextContent {
-  if (!val) return createEmptyRichText();
+  if (!val || !hasRichTextContent(val)) return createEmptyRichText();
   const parsed = parseRichText(val);
   if (parsed) return parsed;
   if (typeof val === "string") {

@@ -296,9 +296,11 @@ export function removeBlock(content: RichTextContent, index: number): RichTextCo
 }
 
 /**
- * Serialize rich-text content to JSON string
+ * Serialize rich-text content to JSON string.
+ * Returns empty string if content has no meaningful text.
  */
 export function serializeRichText(content: RichTextContent): string {
+  if (!hasRichTextContent(content)) return "";
   return JSON.stringify(content);
 }
 

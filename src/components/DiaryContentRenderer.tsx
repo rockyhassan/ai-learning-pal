@@ -1,4 +1,5 @@
 import React, { type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import {
   parseRichText,
   isRichText,
@@ -69,15 +70,13 @@ function BlockItem({
         ? "text-right"
         : "text-left";
 
-  const blockClasses = [
+  const blockClasses = cn(
     alignClass,
-    isBold ? "font-bold text-slate-900 dark:text-white" : "",
-    isItalic ? "italic" : "",
-    isUnderline ? "underline" : "",
-    blockClassName,
-  ]
-    .filter(Boolean)
-    .join(" ");
+    isBold && "font-bold text-slate-900 dark:text-white",
+    isItalic && "italic",
+    isUnderline && "underline",
+    blockClassName
+  );
 
   const segments = parseInlineSegments(block.text || "", {
     bold: isBold,
@@ -87,7 +86,7 @@ function BlockItem({
 
   if (block.type === "bullet-list") {
     return (
-      <div className={`flex items-start gap-2 ${blockClasses}`}>
+      <div className={cn("flex items-start gap-2", blockClasses)}>
         <span className="shrink-0 select-none text-muted-foreground">•</span>
         <div className="flex-1 min-w-0">
           <RenderSegments segments={segments} keyPrefix={`b-${index}`} />
@@ -98,7 +97,7 @@ function BlockItem({
 
   if (block.type === "numbered-list") {
     return (
-      <div className={`flex items-start gap-2 ${blockClasses}`}>
+      <div className={cn("flex items-start gap-2", blockClasses)}>
         <span className="shrink-0 select-none font-semibold text-muted-foreground">
           {index + 1}.
         </span>
@@ -144,7 +143,7 @@ export function DiaryContentRenderer({
     const parsed = parseRichText(content);
     if (parsed && Array.isArray(parsed.blocks) && parsed.blocks.length > 0) {
       return (
-        <div className={`space-y-1 ${className}`}>
+        <div className={cn("space-y-1", className)}>
           {parsed.blocks.map((block, idx) => (
             <BlockItem
               key={idx}
@@ -163,7 +162,7 @@ export function DiaryContentRenderer({
   const lines = rawString.split("\n");
 
   return (
-    <div className={`space-y-1 ${className}`}>
+    <div className={cn("space-y-1", className)}>
       {lines.map((line, idx) => {
         const segments = parseInlineSegments(line);
         return (
